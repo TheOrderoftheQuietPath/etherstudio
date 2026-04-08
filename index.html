@@ -355,6 +355,14 @@ button, input, textarea, select { font-family: inherit; }
   line-height: 1.4;
 }
 .mic-monitor audio { width: 100%; margin-top: 4px; height: 28px; }
+.rec-wave {
+  width: 100%;
+  height: 34px;
+  margin-top: 4px;
+  border: 1px solid #18325b;
+  border-radius: 6px;
+  background: #09172e;
+}
 
 @media (max-width: 1024px) {
   .es-studio-body { grid-template-columns: 240px 1fr; }
@@ -461,7 +469,10 @@ button, input, textarea, select { font-family: inherit; }
       <div id="prog-fill" style="width: 28%;"></div>
     </div>
 
-    <div class="mic-monitor" id="mic-monitor">No recording yet.</div>
+    <div class="mic-monitor" id="mic-monitor">
+      <div id="mic-status">No recording yet.</div>
+      <canvas id="rec-waveform" class="rec-wave" width="180" height="34"></canvas>
+    </div>
 
     <button class="export-btn">Export</button>
   </div>
@@ -484,7 +495,11 @@ const state = {
   mediaRecorder: null,
   micStream: null,
   chunks: [],
-  recording: false
+  recording: false,
+  audioContext: null,
+  analyser: null,
+  sourceNode: null,
+  waveformFrame: null
 };
 
 function show(screen) {
@@ -705,6 +720,35 @@ function generateWaveform(containerId, bars = 50, max = 18) {
   }
 }
 
+function drawRecordingWaveform() {
+  const canvas = document.getElementById('rec-waveform');
+  if (!canvas || !state.analyser) return;
+  const ctx = canvas.getContext('2d');
+  const buffer = new Uint8Array(state.analyser.fftSize);
+
+  const draw = () => {
+    if (!state.recording || !state.analyser) return;
+    state.analyser.getByteTimeDomainData(buffer);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    const sliceWidth = canvas.width / buffer.length;
+    let x = 0;
+    for (let i = 0; i < buffer.length; i += 1) {
+      const y = (buffer[i] / 255) * canvas.height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    ctx.stroke();
+    state.waveformFrame = requestAnimationFrame(draw);
+  };
+
+  draw();
+}
+
 async function toggleRecording() {
   const recordBtn = document.getElementById('record-btn');
 
@@ -713,6 +757,11 @@ async function toggleRecording() {
       state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       state.mediaRecorder = new MediaRecorder(state.micStream);
       state.chunks = [];
+      state.audioContext = new AudioContext();
+      state.analyser = state.audioContext.createAnalyser();
+      state.analyser.fftSize = 256;
+      state.sourceNode = state.audioContext.createMediaStreamSource(state.micStream);
+      state.sourceNode.connect(state.analyser);
 
       state.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) state.chunks.push(event.data);
@@ -726,15 +775,24 @@ async function toggleRecording() {
         if (state.micStream) {
           state.micStream.getTracks().forEach((track) => track.stop());
         }
+        if (state.waveformFrame) cancelAnimationFrame(state.waveformFrame);
+        state.waveformFrame = null;
+        if (state.audioContext) {
+          state.audioContext.close();
+          state.audioContext = null;
+        }
+        state.analyser = null;
+        state.sourceNode = null;
       };
 
       state.mediaRecorder.start();
       state.recording = true;
       recordBtn.classList.add('recording');
       recordBtn.textContent = '⏹';
-      document.getElementById('mic-monitor').textContent = 'Recording in progress...';
+      document.getElementById('mic-status').textContent = 'Recording in progress...';
+      drawRecordingWaveform();
     } catch (error) {
-      document.getElementById('mic-monitor').textContent = 'Microphone permission denied or unavailable.';
+      document.getElementById('mic-status').textContent = 'Microphone permission denied or unavailable.';
     }
   } else {
     state.recording = false;
@@ -748,8 +806,47 @@ async function toggleRecording() {
 
 function showMicPreview(url, size) {
   const holder = document.getElementById('mic-monitor');
+  const canvas = document.getElementById('rec-waveform');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  renderSavedWaveform(url, canvas);
   const kb = Math.max(1, Math.round(size / 1024));
-  holder.innerHTML = `Last take (${kb} KB)<audio controls src="${url}"></audio>`;
+  document.getElementById('mic-status').textContent = `Last take (${kb} KB)`;
+  let audio = holder.querySelector('audio');
+  if (!audio) {
+    audio = document.createElement('audio');
+    audio.controls = true;
+    holder.appendChild(audio);
+  }
+  audio.src = url;
+}
+
+async function renderSavedWaveform(url, canvas) {
+  try {
+    const res = await fetch(url);
+    const arr = await res.arrayBuffer();
+    const context = new AudioContext();
+    const decoded = await context.decodeAudioData(arr);
+    const data = decoded.getChannelData(0);
+    const step = Math.ceil(data.length / canvas.width);
+    const amp = canvas.height / 2;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#60a5fa';
+    for (let i = 0; i < canvas.width; i += 1) {
+      let min = 1;
+      let max = -1;
+      for (let j = 0; j < step; j += 1) {
+        const datum = data[(i * step) + j] || 0;
+        if (datum < min) min = datum;
+        if (datum > max) max = datum;
+      }
+      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+    }
+    context.close();
+  } catch (e) {
+    // ignore waveform decode issues for unsupported blobs
+  }
 }
 
 renderStudio();
