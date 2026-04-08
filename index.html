@@ -279,6 +279,7 @@ button, input, textarea, select { font-family: inherit; }
   position: absolute;
   border-radius: 7px;
   border: 1px solid rgba(255,255,255,0.15);
+  min-width: 42px;
 }
 .clip-label {
   position: absolute;
@@ -330,6 +331,15 @@ button, input, textarea, select { font-family: inherit; }
   opacity: 0.55;
 }
 .wf i { width: 2px; background: #fff; border-radius: 999px; }
+.clip-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  background: linear-gradient(90deg, transparent, rgba(219, 234, 254, 0.35));
+}
 
 .ai-btn {
   width: 100%;
@@ -518,7 +528,7 @@ button, input, textarea, select { font-family: inherit; }
 
     <aside class="es-panel right">
       <div class="es-label">AI Assistant</div>
-      <button class="ai-btn primary" onclick="simulateAI('Fix My Voice')">🎤 Fix My Voice</button>
+      <button class="ai-btn primary" id="fix-voice-btn" onclick="fixMyVoice()">🎤 Fix My Voice</button>
       <button class="ai-btn secondary" onclick="simulateAI('Enhance Mix')">🎚️ Enhance Mix</button>
       <button class="ai-btn secondary" onclick="simulateAI('Make It Bigger')">🚀 Make It Bigger</button>
       <textarea class="ai-input" id="ai-input" rows="3" placeholder="Describe what you want to improve..."></textarea>
@@ -531,6 +541,7 @@ button, input, textarea, select { font-family: inherit; }
     <div class="ctrl-grp">
       <button class="ctrl-btn" onclick="restartPlayback()">⏮</button>
       <button class="ctrl-btn play" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl-btn" onclick="stopPlayback()">⏹</button>
       <button class="ctrl-btn" id="record-btn" onclick="toggleRecording()">⏺</button>
     </div>
 
@@ -595,6 +606,7 @@ const state = {
   sourceNode: null,
   waveformFrame: null,
   dragging: null,
+  resizing: null,
   playbackAudio: null,
   currentClipId: null
 };
@@ -761,6 +773,10 @@ function renderTimeline() {
       renderClipWaveform(wf, clip.peaks || []);
 
       clipEl.addEventListener('mousedown', (event) => startDragClip(event, track.id, clip.id));
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'clip-resize';
+      resizeHandle.addEventListener('mousedown', (event) => startResizeClip(event, track.id, clip.id));
+      clipEl.appendChild(resizeHandle);
       lane.appendChild(clipEl);
     });
 
@@ -769,6 +785,7 @@ function renderTimeline() {
 }
 
 function startDragClip(event, trackId, clipId) {
+  if (event.target.closest('.clip-resize')) return;
   event.preventDefault();
   const track = state.tracks.find((t) => t.id === trackId);
   const clip = track?.clips.find((c) => c.id === clipId);
@@ -782,6 +799,23 @@ function startDragClip(event, trackId, clipId) {
   };
   document.addEventListener('mousemove', onDragClip);
   document.addEventListener('mouseup', stopDragClip);
+}
+
+function startResizeClip(event, trackId, clipId) {
+  event.preventDefault();
+  event.stopPropagation();
+  const track = state.tracks.find((t) => t.id === trackId);
+  const clip = track?.clips.find((c) => c.id === clipId);
+  if (!clip) return;
+
+  state.resizing = {
+    trackId,
+    clipId,
+    startX: event.clientX,
+    startDurationSec: clip.durationSec
+  };
+  document.addEventListener('mousemove', onResizeClip);
+  document.addEventListener('mouseup', stopResizeClip);
 }
 
 function onDragClip(event) {
@@ -808,6 +842,29 @@ function stopDragClip() {
   document.removeEventListener('mouseup', stopDragClip);
 }
 
+function onResizeClip(event) {
+  if (!state.resizing) return;
+  const lane = document.querySelector(`[data-track-id="${state.resizing.trackId}"]`);
+  if (!lane) return;
+  const rect = lane.getBoundingClientRect();
+  const deltaPx = event.clientX - state.resizing.startX;
+  const deltaSec = pctToSec((deltaPx / rect.width) * 100);
+
+  const track = state.tracks.find((t) => t.id === state.resizing.trackId);
+  const clip = track?.clips.find((c) => c.id === state.resizing.clipId);
+  if (!clip) return;
+
+  const maxDuration = Math.max(1, state.totalSec - clip.startSec);
+  clip.durationSec = Math.max(1, Math.min(maxDuration, state.resizing.startDurationSec + deltaSec));
+  renderTimeline();
+}
+
+function stopResizeClip() {
+  state.resizing = null;
+  document.removeEventListener('mousemove', onResizeClip);
+  document.removeEventListener('mouseup', stopResizeClip);
+}
+
 function renderStudio() {
   renderTrackList();
   renderTimeline();
@@ -828,20 +885,25 @@ function addTrack() {
 
 function simulateAI(action) {
   const response = document.getElementById('ai-response');
+  response.textContent = 'Analyzing...';
   const responses = {
     'Fix My Voice': 'I tightened vocal timing and added gentle pitch correction to the vocal clip. Drag it earlier for a tighter pocket.',
     'Enhance Mix': 'I balanced track levels and added bus compression. Keep vocals peaking around -9 dB for headroom.',
     'Make It Bigger': 'Try duplicating the instrumental clip in bars 5–8 and automate volume into the final bar.'
   };
-  response.textContent = responses[action] || 'Done. I refined the arrangement and improved overall clarity.';
+  setTimeout(() => {
+    response.textContent = responses[action] || 'Improved clarity and balance.';
+  }, 550);
 }
 
 function simulateCustomAI() {
   const input = document.getElementById('ai-input');
   const response = document.getElementById('ai-response');
   if (!input.value.trim()) return;
-
-  response.textContent = `Got it: "${input.value.trim()}". Suggestion: trim silence from your vocal clip start, then nudge the clip 100ms right for groove.`;
+  response.textContent = 'Thinking...';
+  setTimeout(() => {
+    response.textContent = `Got it: "${input.value.trim()}". Improved clarity and balance. Suggestion: trim silence from your vocal clip start, then nudge the clip 100ms right for groove.`;
+  }, 650);
   input.value = '';
 }
 
@@ -883,6 +945,108 @@ function stopPlaybackAudio() {
     state.playbackAudio = null;
   }
   state.currentClipId = null;
+}
+
+function stopPlayback() {
+  state.playing = false;
+  clearInterval(state.timer);
+  state.timer = null;
+  stopPlaybackAudio();
+  document.getElementById('play-btn').textContent = '▶';
+  state.progressSec = 0;
+  updatePlaybackUI();
+}
+
+function getLatestVocalClip() {
+  const vocals = state.tracks.find((t) => t.id === 'vocals');
+  if (!vocals || vocals.clips.length === 0) return null;
+  return vocals.clips[vocals.clips.length - 1];
+}
+
+function encodeWavFromBuffer(audioBuffer) {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const length = audioBuffer.length * numChannels * 2;
+  const buffer = new ArrayBuffer(44 + length);
+  const view = new DataView(buffer);
+  const writeString = (offset, str) => { for (let i = 0; i < str.length; i += 1) view.setUint8(offset + i, str.charCodeAt(i)); };
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + length, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * 2, true);
+  view.setUint16(32, numChannels * 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, length, true);
+
+  let offset = 44;
+  const channels = Array.from({ length: numChannels }, (_, ch) => audioBuffer.getChannelData(ch));
+  for (let i = 0; i < audioBuffer.length; i += 1) {
+    for (let ch = 0; ch < numChannels; ch += 1) {
+      const sample = Math.max(-1, Math.min(1, channels[ch][i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+async function fixMyVoice() {
+  const response = document.getElementById('ai-response');
+  const btn = document.getElementById('fix-voice-btn');
+  const clip = getLatestVocalClip();
+  if (!clip?.audioUrl) {
+    response.textContent = 'Record a vocal take first, then run Fix My Voice.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '🎤 Fixing...';
+  response.textContent = 'Analyzing vocal and applying enhancement...';
+
+  try {
+    const arr = await (await fetch(clip.audioUrl)).arrayBuffer();
+    const decodeCtx = new AudioContext();
+    const srcBuffer = await decodeCtx.decodeAudioData(arr.slice(0));
+    await decodeCtx.close();
+
+    const offline = new OfflineAudioContext(srcBuffer.numberOfChannels, srcBuffer.length, srcBuffer.sampleRate);
+    const source = offline.createBufferSource();
+    source.buffer = srcBuffer;
+    const filter = offline.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 8500;
+    const compressor = offline.createDynamicsCompressor();
+    compressor.threshold.value = -20;
+    compressor.ratio.value = 3;
+    const gain = offline.createGain();
+    gain.gain.value = 1.15;
+
+    source.connect(filter);
+    filter.connect(compressor);
+    compressor.connect(gain);
+    gain.connect(offline.destination);
+    source.start();
+
+    const rendered = await offline.startRendering();
+    const wavBlob = encodeWavFromBuffer(rendered);
+    clip.audioUrl = URL.createObjectURL(wavBlob);
+    clip.peaks = extractPeaks(rendered.getChannelData(0), 72);
+
+    renderStudio();
+    response.textContent = 'Improved clarity and balance. Vocal normalized with gentle smoothing.';
+  } catch (e) {
+    response.textContent = 'Could not process this take. Try recording again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎤 Fix My Voice';
+  }
 }
 
 function togglePlay() {
