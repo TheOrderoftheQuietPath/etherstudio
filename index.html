@@ -555,14 +555,36 @@ const COLORS = ['#60a5fa', '#22d3ee', '#818cf8', '#34d399', '#fb923c', '#f472b6'
 
 const state = {
   playing: false,
-  progressSec: 28,
-  totalSec: 120,
+  progressSec: 0,
+  totalSec: 60,
   timer: null,
   currentTrack: null,
   tracks: [
-    { id: crypto.randomUUID(), name: 'Vocals', color: '#60a5fa', volume: 78, muted: false },
-    { id: crypto.randomUUID(), name: 'Drums', color: '#22d3ee', volume: 82, muted: false },
-    { id: crypto.randomUUID(), name: 'Melody', color: '#818cf8', volume: 71, muted: false }
+    {
+      id: 'vocals',
+      name: 'Vocals',
+      color: '#60a5fa',
+      volume: 78,
+      muted: false,
+      clips: []
+    },
+    {
+      id: 'instrument',
+      name: 'Instrument',
+      color: '#818cf8',
+      volume: 70,
+      muted: false,
+      clips: [
+        {
+          id: crypto.randomUUID(),
+          name: 'Instrument Loop',
+          startSec: 4,
+          durationSec: 14,
+          peaks: Array.from({ length: 60 }, (_, i) => 0.2 + (Math.sin(i / 3) + 1) * 0.25),
+          audioUrl: null
+        }
+      ]
+    }
   ],
   mediaRecorder: null,
   micStream: null,
@@ -571,7 +593,10 @@ const state = {
   audioContext: null,
   analyser: null,
   sourceNode: null,
-  waveformFrame: null
+  waveformFrame: null,
+  dragging: null,
+  playbackAudio: null,
+  currentClipId: null
 };
 
 function show(screen) {
@@ -600,7 +625,7 @@ function generateTrack() {
       title: title.charAt(0).toUpperCase() + title.slice(1),
       bpm: 118 + Math.round(Math.random() * 18),
       key: ['C Minor', 'A Minor', 'F Major', 'D Minor'][Math.floor(Math.random() * 4)],
-      tracks: ['Vocals', 'Drums', 'Melody', 'Bass', 'FX'],
+      tracks: ['Vocals', 'Instrument'],
       feedback: 'Solid concept. Start with a simple 8-bar groove, keep vocals upfront, then automate energy into the final section.'
     };
 
@@ -631,18 +656,9 @@ function openStudio() {
     document.getElementById('studio-bpm').textContent = `${state.currentTrack.bpm} BPM`;
     document.getElementById('studio-key').textContent = state.currentTrack.key;
     document.getElementById('studio-title').textContent = state.currentTrack.title;
-
-    const baseTracks = state.currentTrack.tracks.slice(0, 5);
-    state.tracks = baseTracks.map((name, idx) => ({
-      id: crypto.randomUUID(),
-      name,
-      color: COLORS[idx % COLORS.length],
-      volume: 58 + Math.round(Math.random() * 28),
-      muted: false
-    }));
-    renderStudio();
   }
   show('studio');
+  renderStudio();
 }
 
 function renderTrackList() {
@@ -659,7 +675,7 @@ function renderTrackList() {
         <button class="track-mute ${track.muted ? 'muted' : ''}" data-action="mute">${track.muted ? 'Muted' : 'Mute'}</button>
       </div>
       <input class="track-volume" type="range" min="0" max="100" value="${track.volume}" data-action="volume" />
-      <div class="track-meta">Volume: <span>${track.volume}</span>%</div>
+      <div class="track-meta">Volume: <span>${track.volume}</span>% · Clips: ${track.clips.length}</div>
       <div class="track-meter"><div class="track-meter-fill" id="meter-${track.id}"></div></div>
     `;
 
@@ -677,47 +693,135 @@ function renderTrackList() {
   });
 }
 
+function secToPct(sec) {
+  return Math.max(0, Math.min(100, (sec / state.totalSec) * 100));
+}
+
+function pctToSec(pct) {
+  return Math.max(0, Math.min(state.totalSec, (pct / 100) * state.totalSec));
+}
+
+function renderClipWaveform(container, peaks) {
+  container.innerHTML = '';
+  (peaks || []).forEach((value) => {
+    const bar = document.createElement('i');
+    const h = Math.max(3, Math.min(24, Math.round(value * 24)));
+    bar.style.height = `${h}px`;
+    container.appendChild(bar);
+  });
+}
+
+function renderWaveformOnCanvas(canvas, peaks) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#60a5fa';
+  const step = Math.max(1, Math.floor(peaks.length / canvas.width));
+  const amp = canvas.height / 2;
+  for (let i = 0; i < canvas.width; i += 1) {
+    const peak = peaks[Math.min(peaks.length - 1, i * step)] || 0;
+    const h = Math.max(1, peak * amp * 1.8);
+    ctx.fillRect(i, amp - h / 2, 1, h);
+  }
+}
+
 function renderTimeline() {
   const rows = document.getElementById('timeline-rows');
   rows.innerHTML = '';
 
-  state.tracks.slice(0, 6).forEach((track, idx) => {
+  state.tracks.forEach((track) => {
     const row = document.createElement('div');
     row.className = 'tl-row';
-
-    const laneOpacity = track.muted ? 0.4 : 1;
-    const blockWidth = 38 + (idx * 9) % 42;
-    const blockLeft = 4 + (idx * 7) % 35;
-
     row.innerHTML = `
       <div class="tl-row-label">${track.name}</div>
-      <div class="tl-row-lane" style="opacity:${laneOpacity}">
-        <div class="block" style="left:${blockLeft}%; width:${blockWidth}%; background:${track.color}33; border-color:${track.color}88;">
-          <div class="clip-label">${track.name} Clip</div>
-          <div class="wf" id="wf-${track.id}"></div>
-        </div>
-      </div>
+      <div class="tl-row-lane" data-track-id="${track.id}" style="opacity:${track.muted ? 0.45 : 1}"></div>
     `;
 
+    const lane = row.querySelector('.tl-row-lane');
+    track.clips.forEach((clip) => {
+      const left = secToPct(clip.startSec);
+      const width = Math.max(4, secToPct(clip.durationSec));
+      const clipEl = document.createElement('div');
+      clipEl.className = 'block';
+      clipEl.dataset.clipId = clip.id;
+      clipEl.dataset.trackId = track.id;
+      clipEl.style.left = `${left}%`;
+      clipEl.style.width = `${width}%`;
+      clipEl.style.background = `${track.color}33`;
+      clipEl.style.borderColor = `${track.color}aa`;
+      clipEl.style.cursor = 'grab';
+
+      const label = document.createElement('div');
+      label.className = 'clip-label';
+      label.textContent = clip.name;
+      clipEl.appendChild(label);
+
+      const wf = document.createElement('div');
+      wf.className = 'wf';
+      clipEl.appendChild(wf);
+      renderClipWaveform(wf, clip.peaks || []);
+
+      clipEl.addEventListener('mousedown', (event) => startDragClip(event, track.id, clip.id));
+      lane.appendChild(clipEl);
+    });
+
     rows.appendChild(row);
-    generateWaveform(`wf-${track.id}`, Math.max(18, Math.round((blockWidth / 100) * 90)), 20 - idx);
   });
+}
+
+function startDragClip(event, trackId, clipId) {
+  event.preventDefault();
+  const track = state.tracks.find((t) => t.id === trackId);
+  const clip = track?.clips.find((c) => c.id === clipId);
+  if (!clip) return;
+
+  state.dragging = {
+    trackId,
+    clipId,
+    startX: event.clientX,
+    startSec: clip.startSec
+  };
+  document.addEventListener('mousemove', onDragClip);
+  document.addEventListener('mouseup', stopDragClip);
+}
+
+function onDragClip(event) {
+  if (!state.dragging) return;
+  const lane = document.querySelector(`[data-track-id="${state.dragging.trackId}"]`);
+  if (!lane) return;
+  const rect = lane.getBoundingClientRect();
+  const deltaPx = event.clientX - state.dragging.startX;
+  const deltaPct = (deltaPx / rect.width) * 100;
+  const deltaSec = pctToSec(deltaPct);
+
+  const track = state.tracks.find((t) => t.id === state.dragging.trackId);
+  const clip = track?.clips.find((c) => c.id === state.dragging.clipId);
+  if (!clip) return;
+
+  clip.startSec = Math.max(0, Math.min(state.totalSec - clip.durationSec, state.dragging.startSec + deltaSec));
+  renderTimeline();
+  updatePlaybackUI();
+}
+
+function stopDragClip() {
+  state.dragging = null;
+  document.removeEventListener('mousemove', onDragClip);
+  document.removeEventListener('mouseup', stopDragClip);
 }
 
 function renderStudio() {
   renderTrackList();
   renderTimeline();
+  updatePlaybackUI();
 }
 
 function addTrack() {
-  const suggestions = ['Pad', '808', 'Lead', 'Perc', 'FX'];
-  const name = suggestions[Math.floor(Math.random() * suggestions.length)] + ` ${state.tracks.length - 1}`;
   state.tracks.push({
     id: crypto.randomUUID(),
-    name,
+    name: `Layer ${state.tracks.length + 1}`,
     color: COLORS[state.tracks.length % COLORS.length],
     volume: 70,
-    muted: false
+    muted: false,
+    clips: []
   });
   renderStudio();
 }
@@ -725,9 +829,9 @@ function addTrack() {
 function simulateAI(action) {
   const response = document.getElementById('ai-response');
   const responses = {
-    'Fix My Voice': 'I tightened vocal timing, applied transparent pitch correction, and cleaned low-end rumble. Try +2 dB at 4 kHz for more presence.',
-    'Enhance Mix': 'I balanced the drum bus and added subtle glue compression on the master. Your hook now hits cleaner without clipping.',
-    'Make It Bigger': 'I widened the synth layers and added rising impacts into the drop. Automate reverb tails in the last 2 bars for extra lift.'
+    'Fix My Voice': 'I tightened vocal timing and added gentle pitch correction to the vocal clip. Drag it earlier for a tighter pocket.',
+    'Enhance Mix': 'I balanced track levels and added bus compression. Keep vocals peaking around -9 dB for headroom.',
+    'Make It Bigger': 'Try duplicating the instrumental clip in bars 5–8 and automate volume into the final bar.'
   };
   response.textContent = responses[action] || 'Done. I refined the arrangement and improved overall clarity.';
 }
@@ -737,7 +841,7 @@ function simulateCustomAI() {
   const response = document.getElementById('ai-response');
   if (!input.value.trim()) return;
 
-  response.textContent = `Got it: "${input.value.trim()}". Suggested move: simplify the verse instrumentation, push vocal delay in transitions, and automate a 1.5 dB lift into the chorus.`;
+  response.textContent = `Got it: "${input.value.trim()}". Suggestion: trim silence from your vocal clip start, then nudge the clip 100ms right for groove.`;
   input.value = '';
 }
 
@@ -746,7 +850,7 @@ function formatTime(seconds) {
 }
 
 function updatePlaybackUI() {
-  const progressPct = Math.max(0, Math.min(100, Math.round((state.progressSec / state.totalSec) * 100)));
+  const progressPct = secToPct(state.progressSec);
   document.getElementById('time-disp').textContent = `${formatTime(state.progressSec)} / ${formatTime(state.totalSec)}`;
   document.getElementById('prog-fill').style.width = `${progressPct}%`;
   document.getElementById('playhead').style.left = `${progressPct}%`;
@@ -761,52 +865,93 @@ function updateTrackMeters() {
       meter.style.width = '0%';
       return;
     }
-    const dynamic = Math.max(6, Math.min(96, track.volume - 18 + Math.random() * 24));
+    const dynamic = Math.max(8, Math.min(96, track.volume - 18 + Math.random() * 24));
     meter.style.width = `${dynamic}%`;
   });
+}
+
+function getFirstVocalClip() {
+  const vocals = state.tracks.find((t) => t.id === 'vocals');
+  if (!vocals) return null;
+  return vocals.clips.find((clip) => clip.audioUrl) || null;
+}
+
+function stopPlaybackAudio() {
+  if (state.playbackAudio) {
+    state.playbackAudio.pause();
+    state.playbackAudio.src = '';
+    state.playbackAudio = null;
+  }
+  state.currentClipId = null;
 }
 
 function togglePlay() {
   state.playing = !state.playing;
   document.getElementById('play-btn').textContent = state.playing ? '⏸' : '▶';
-  updateTrackMeters();
 
   if (state.playing) {
-    state.timer = setInterval(() => {
-      state.progressSec = Math.min(state.totalSec, state.progressSec + 1);
-      updatePlaybackUI();
-      if (state.progressSec >= state.totalSec) {
-        togglePlay();
+    const vocalClip = getFirstVocalClip();
+    if (vocalClip && !state.tracks.find((t) => t.id === 'vocals')?.muted) {
+      stopPlaybackAudio();
+      state.playbackAudio = new Audio(vocalClip.audioUrl);
+      state.currentClipId = vocalClip.id;
+
+      if (state.progressSec < vocalClip.startSec || state.progressSec > vocalClip.startSec + vocalClip.durationSec) {
+        state.progressSec = vocalClip.startSec;
       }
-    }, 1000);
+      state.playbackAudio.currentTime = Math.max(0, state.progressSec - vocalClip.startSec);
+
+      state.playbackAudio.ontimeupdate = () => {
+        state.progressSec = Math.min(state.totalSec, vocalClip.startSec + state.playbackAudio.currentTime);
+        updatePlaybackUI();
+      };
+      state.playbackAudio.onended = () => {
+        state.playing = false;
+        document.getElementById('play-btn').textContent = '▶';
+        clearInterval(state.timer);
+        state.timer = null;
+        updatePlaybackUI();
+      };
+      state.playbackAudio.play();
+    }
+
+    if (!state.timer) {
+      state.timer = setInterval(() => {
+        if (!state.playbackAudio) {
+          state.progressSec = Math.min(state.totalSec, state.progressSec + 0.1);
+          if (state.progressSec >= state.totalSec) {
+            togglePlay();
+            return;
+          }
+          updatePlaybackUI();
+        }
+      }, 100);
+    }
   } else {
     clearInterval(state.timer);
     state.timer = null;
+    stopPlaybackAudio();
+    updatePlaybackUI();
   }
 }
 
 function restartPlayback() {
   state.progressSec = 0;
+  if (state.playbackAudio) state.playbackAudio.currentTime = 0;
   updatePlaybackUI();
 }
 
 function seekBar(event) {
   const rect = event.currentTarget.getBoundingClientRect();
   const relative = (event.clientX - rect.left) / rect.width;
-  state.progressSec = Math.round(relative * state.totalSec);
-  updatePlaybackUI();
-}
+  state.progressSec = Math.round(relative * state.totalSec * 10) / 10;
 
-function generateWaveform(containerId, bars = 50, max = 18) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-
-  for (let i = 0; i < bars; i += 1) {
-    const bar = document.createElement('i');
-    bar.style.height = `${Math.max(3, Math.round(Math.random() * max))}px`;
-    container.appendChild(bar);
+  const clip = getFirstVocalClip();
+  if (clip && state.playbackAudio) {
+    const inside = state.progressSec >= clip.startSec && state.progressSec <= clip.startSec + clip.durationSec;
+    if (inside) state.playbackAudio.currentTime = Math.max(0, state.progressSec - clip.startSec);
   }
+  updatePlaybackUI();
 }
 
 function drawRecordingWaveform() {
@@ -838,6 +983,34 @@ function drawRecordingWaveform() {
   draw();
 }
 
+function extractPeaks(channelData, sampleCount = 64) {
+  const blockSize = Math.floor(channelData.length / sampleCount) || 1;
+  const peaks = [];
+
+  for (let i = 0; i < sampleCount; i += 1) {
+    let max = 0;
+    const start = i * blockSize;
+    const end = Math.min(start + blockSize, channelData.length);
+    for (let j = start; j < end; j += 1) {
+      const val = Math.abs(channelData[j]);
+      if (val > max) max = val;
+    }
+    peaks.push(max);
+  }
+  return peaks;
+}
+
+async function decodeAudioBlob(blob) {
+  const arr = await blob.arrayBuffer();
+  const context = new AudioContext();
+  const decoded = await context.decodeAudioData(arr.slice(0));
+  const channelData = decoded.getChannelData(0);
+  const peaks = extractPeaks(channelData, 72);
+  const durationSec = Math.max(0.5, decoded.duration);
+  await context.close();
+  return { peaks, durationSec };
+}
+
 async function toggleRecording() {
   const recordBtn = document.getElementById('record-btn');
 
@@ -856,14 +1029,12 @@ async function toggleRecording() {
         if (event.data.size > 0) state.chunks.push(event.data);
       };
 
-      state.mediaRecorder.onstop = () => {
+      state.mediaRecorder.onstop = async () => {
         const blob = new Blob(state.chunks, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
-        showMicPreview(url, blob.size);
+        await showMicPreview(blob, url, blob.size);
 
-        if (state.micStream) {
-          state.micStream.getTracks().forEach((track) => track.stop());
-        }
+        if (state.micStream) state.micStream.getTracks().forEach((track) => track.stop());
         if (state.waveformFrame) cancelAnimationFrame(state.waveformFrame);
         state.waveformFrame = null;
         if (state.audioContext) {
@@ -887,20 +1058,19 @@ async function toggleRecording() {
     state.recording = false;
     recordBtn.classList.remove('recording');
     recordBtn.textContent = '⏺';
-    if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
-      state.mediaRecorder.stop();
-    }
+    if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') state.mediaRecorder.stop();
   }
 }
 
-function showMicPreview(url, size) {
+async function showMicPreview(blob, url, size) {
   const holder = document.getElementById('mic-monitor');
   const canvas = document.getElementById('rec-waveform');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderSavedWaveform(url, canvas);
+
   const kb = Math.max(1, Math.round(size / 1024));
   document.getElementById('mic-status').textContent = `Last take (${kb} KB)`;
+
   let audio = holder.querySelector('audio');
   if (!audio) {
     audio = document.createElement('audio');
@@ -908,34 +1078,34 @@ function showMicPreview(url, size) {
     holder.appendChild(audio);
   }
   audio.src = url;
+
+  try {
+    const { peaks, durationSec } = await decodeAudioBlob(blob);
+    renderWaveformOnCanvas(canvas, peaks);
+    addRecordedClip(url, peaks, durationSec);
+  } catch (e) {
+    // fallback for unsupported blob decoders
+  }
 }
 
-async function renderSavedWaveform(url, canvas) {
-  try {
-    const res = await fetch(url);
-    const arr = await res.arrayBuffer();
-    const context = new AudioContext();
-    const decoded = await context.decodeAudioData(arr);
-    const data = decoded.getChannelData(0);
-    const step = Math.ceil(data.length / canvas.width);
-    const amp = canvas.height / 2;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#60a5fa';
-    for (let i = 0; i < canvas.width; i += 1) {
-      let min = 1;
-      let max = -1;
-      for (let j = 0; j < step; j += 1) {
-        const datum = data[(i * step) + j] || 0;
-        if (datum < min) min = datum;
-        if (datum > max) max = datum;
-      }
-      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
-    }
-    context.close();
-  } catch (e) {
-    // ignore waveform decode issues for unsupported blobs
-  }
+function addRecordedClip(audioUrl, peaks, durationSec) {
+  const vocals = state.tracks.find((t) => t.id === 'vocals');
+  if (!vocals) return;
+
+  const safeDuration = Math.min(20, Math.max(1, durationSec));
+  const latestEnd = vocals.clips.reduce((m, c) => Math.max(m, c.startSec + c.durationSec + 0.5), 0);
+  const startSec = Math.min(state.totalSec - safeDuration, latestEnd);
+
+  vocals.clips.push({
+    id: crypto.randomUUID(),
+    name: `Vocal Take ${vocals.clips.length + 1}`,
+    startSec,
+    durationSec: safeDuration,
+    peaks,
+    audioUrl
+  });
+
+  renderStudio();
 }
 
 renderStudio();
