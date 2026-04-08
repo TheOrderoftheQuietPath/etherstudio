@@ -205,6 +205,20 @@ button, input, textarea, select { font-family: inherit; }
 }
 .track-volume { width: 100%; accent-color: var(--primary); }
 .track-meta { margin-top: 6px; font-size: 11px; color: #7288ad; }
+.track-meter {
+  margin-top: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #102549;
+  overflow: hidden;
+}
+.track-meter-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+  transition: width 120ms linear;
+}
 
 .es-timeline {
   padding: 14px;
@@ -213,6 +227,24 @@ button, input, textarea, select { font-family: inherit; }
   gap: 10px;
   overflow: hidden;
 }
+.studio-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0a1730;
+}
+.tool-chip {
+  font-size: 11px;
+  color: #9ec2ff;
+  border: 1px solid #1f3f73;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #102246;
+}
+.tool-chip.active { border-color: #3b82f6; color: #dbeafe; }
 .tl-header { display: flex; gap: 8px; align-items: center; }
 .pill {
   padding: 4px 10px;
@@ -247,6 +279,28 @@ button, input, textarea, select { font-family: inherit; }
   position: absolute;
   border-radius: 7px;
   border: 1px solid rgba(255,255,255,0.15);
+}
+.clip-label {
+  position: absolute;
+  top: 4px;
+  left: 7px;
+  font-size: 10px;
+  color: #e2e8f0;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+.tl-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: calc(100% / 16) 100%;
+  pointer-events: none;
+}
+.tl-grid-strong {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(148, 163, 184, 0.16) 1px, transparent 1px);
+  background-size: calc(100% / 4) 100%;
+  pointer-events: none;
 }
 .playhead {
   position: absolute;
@@ -340,6 +394,14 @@ button, input, textarea, select { font-family: inherit; }
 }
 .timeline-progress > div { height: 100%; border-radius: inherit; background: var(--primary); }
 .time-display { font-size: 12px; color: #8faad7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.transport-mode {
+  font-size: 11px;
+  color: #8faad7;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #0a1731;
+}
 .export-btn {
   padding: 9px 14px;
   border-radius: 999px;
@@ -431,15 +493,24 @@ button, input, textarea, select { font-family: inherit; }
     </aside>
 
     <main class="es-timeline">
+      <div class="studio-toolbar">
+        <span class="tool-chip active">Arrangement</span>
+        <span class="tool-chip">Mixer</span>
+        <span class="tool-chip">Piano Roll</span>
+        <span class="tool-chip">Snap 1/4</span>
+        <span class="tool-chip">Quantize</span>
+      </div>
       <div class="tl-header">
         <div class="pill" id="studio-bpm">126 BPM</div>
         <div class="pill" id="studio-key">C Minor</div>
         <div class="pill" id="studio-title" style="margin-left:auto;">Studio Session</div>
       </div>
       <div class="tl-canvas">
+        <div class="tl-grid"></div>
+        <div class="tl-grid-strong"></div>
         <div class="playhead" id="playhead" style="left: 28%;"></div>
         <div class="ruler">
-          <span>0:00</span><span>0:15</span><span>0:30</span><span>0:45</span><span>1:00</span><span>1:15</span><span>1:30</span><span>1:45</span>
+          <span>Bar 1</span><span>Bar 2</span><span>Bar 3</span><span>Bar 4</span><span>Bar 5</span><span>Bar 6</span><span>Bar 7</span><span>Bar 8</span>
         </div>
         <div id="timeline-rows"></div>
       </div>
@@ -464,6 +535,7 @@ button, input, textarea, select { font-family: inherit; }
     </div>
 
     <div class="time-display" id="time-disp">0:28 / 2:00</div>
+    <div class="transport-mode">4/4 · 24bit · 48kHz</div>
 
     <div class="timeline-progress" onclick="seekBar(event)">
       <div id="prog-fill" style="width: 28%;"></div>
@@ -588,6 +660,7 @@ function renderTrackList() {
       </div>
       <input class="track-volume" type="range" min="0" max="100" value="${track.volume}" data-action="volume" />
       <div class="track-meta">Volume: <span>${track.volume}</span>%</div>
+      <div class="track-meter"><div class="track-meter-fill" id="meter-${track.id}"></div></div>
     `;
 
     item.querySelector('[data-action="mute"]').addEventListener('click', () => {
@@ -620,6 +693,7 @@ function renderTimeline() {
       <div class="tl-row-label">${track.name}</div>
       <div class="tl-row-lane" style="opacity:${laneOpacity}">
         <div class="block" style="left:${blockLeft}%; width:${blockWidth}%; background:${track.color}33; border-color:${track.color}88;">
+          <div class="clip-label">${track.name} Clip</div>
           <div class="wf" id="wf-${track.id}"></div>
         </div>
       </div>
@@ -676,11 +750,26 @@ function updatePlaybackUI() {
   document.getElementById('time-disp').textContent = `${formatTime(state.progressSec)} / ${formatTime(state.totalSec)}`;
   document.getElementById('prog-fill').style.width = `${progressPct}%`;
   document.getElementById('playhead').style.left = `${progressPct}%`;
+  updateTrackMeters();
+}
+
+function updateTrackMeters() {
+  state.tracks.forEach((track) => {
+    const meter = document.getElementById(`meter-${track.id}`);
+    if (!meter) return;
+    if (!state.playing || track.muted) {
+      meter.style.width = '0%';
+      return;
+    }
+    const dynamic = Math.max(6, Math.min(96, track.volume - 18 + Math.random() * 24));
+    meter.style.width = `${dynamic}%`;
+  });
 }
 
 function togglePlay() {
   state.playing = !state.playing;
   document.getElementById('play-btn').textContent = state.playing ? '⏸' : '▶';
+  updateTrackMeters();
 
   if (state.playing) {
     state.timer = setInterval(() => {
