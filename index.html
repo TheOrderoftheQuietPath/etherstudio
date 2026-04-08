@@ -6,106 +6,365 @@
 <title>EtherStudio</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #070d1a; color: #e2e8f0; min-height: 100vh; }
-.es-header { background: #0a1428; border-bottom: 1px solid #1e3a5f; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
-.es-logo { font-size: 16px; font-weight: 600; color: #60a5fa; letter-spacing: 0.04em; }
-.es-logo span { color: #93c5fd; font-weight: 400; }
+:root {
+  --bg: #050b18;
+  --bg-soft: #0a1428;
+  --surface: #0e1d39;
+  --surface-2: #101f3b;
+  --border: #1b3257;
+  --muted: #64748b;
+  --text: #dbe6ff;
+  --primary: #3b82f6;
+  --primary-strong: #2563eb;
+  --danger: #ef4444;
+}
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0b1a33 0%, var(--bg) 45%);
+  color: var(--text);
+  min-height: 100vh;
+}
+button, input, textarea, select { font-family: inherit; }
+.es-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(6, 14, 28, 0.92);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.es-logo { font-size: 16px; font-weight: 700; color: #93c5fd; letter-spacing: 0.03em; }
+.es-logo span { color: #dbeafe; font-weight: 400; }
 .es-nav { display: flex; gap: 6px; }
-.es-nav button { padding: 6px 16px; border-radius: 20px; border: 1px solid transparent; font-size: 13px; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.15s; font-family: inherit; }
-.es-nav button.active { background: #1e3a5f; border-color: #2563eb; color: #93c5fd; }
+.es-nav button {
+  padding: 6px 14px;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+.es-nav button.active { background: #14294e; border-color: var(--primary); color: #dbeafe; }
 .es-nav button:hover:not(.active) { color: #cbd5e1; background: #111f38; }
-.es-badge { font-size: 11px; color: #334155; }
-.es-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 53px); padding: 40px; gap: 36px; }
-.es-welcome h1 { font-size: 30px; font-weight: 500; color: #e2e8f0; text-align: center; }
-.es-welcome p { font-size: 15px; color: #64748b; text-align: center; max-width: 380px; line-height: 1.7; }
-.es-cards { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
-.es-card { width: 170px; padding: 28px 18px; background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 14px; cursor: pointer; transition: all 0.18s; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
-.es-card:hover { border-color: #2563eb; background: #112244; transform: translateY(-3px); }
-.es-card.featured { border-color: #2563eb; background: #0f1f40; }
-.es-icon { width: 48px; height: 48px; border-radius: 12px; background: #1e3a5f; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-.es-card h3 { font-size: 15px; font-weight: 500; color: #cbd5e1; }
-.es-card p { font-size: 12px; color: #475569; line-height: 1.5; }
-.es-cta { padding: 13px 40px; background: #2563eb; color: #fff; border: none; border-radius: 28px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.15s; font-family: inherit; }
-.es-cta:hover { background: #1d4ed8; }
-.es-generate { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 53px); padding: 40px; gap: 24px; overflow-y: auto; }
-.es-generate h2 { font-size: 24px; font-weight: 500; color: #e2e8f0; text-align: center; }
-.es-generate > p { font-size: 14px; color: #64748b; text-align: center; max-width: 420px; line-height: 1.7; }
-.es-gen-box { width: 100%; max-width: 560px; background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.es-gen-textarea { background: #070d1a; border: 1px solid #1e3a5f; border-radius: 10px; padding: 14px; color: #e2e8f0; font-size: 14px; font-family: inherit; resize: none; line-height: 1.6; min-height: 100px; width: 100%; }
-.es-gen-textarea:focus { outline: none; border-color: #2563eb; }
-.es-gen-textarea::placeholder { color: #334155; }
-.es-gen-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.es-gen-select { flex: 1; min-width: 120px; background: #070d1a; border: 1px solid #1e3a5f; border-radius: 9px; padding: 9px 12px; color: #94a3b8; font-size: 13px; font-family: inherit; cursor: pointer; }
-.es-gen-btn { width: 100%; padding: 13px; background: #2563eb; border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.es-gen-btn:hover:not(:disabled) { background: #1d4ed8; }
-.es-gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.es-suggestions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 560px; }
-.es-sug { padding: 7px 14px; background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 20px; font-size: 12px; color: #64748b; cursor: pointer; transition: all 0.15s; }
-.es-sug:hover { border-color: #2563eb; color: #60a5fa; }
-.es-ai-card { width: 100%; max-width: 560px; background: #0d1f3c; border: 1px solid #2563eb; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.es-ai-card-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.es-ai-card-header h3 { font-size: 16px; font-weight: 500; color: #e2e8f0; flex: 1; }
-.es-track-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-.es-track-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; background: #1e3a5f; color: #60a5fa; border: 1px solid #2563eb; }
-.es-ai-feedback { font-size: 13px; color: #94a3b8; line-height: 1.7; background: #070d1a; border-radius: 9px; padding: 14px; border: 1px solid #1e3a5f; }
-.es-meta-pill { padding: 5px 14px; background: #070d1a; border: 1px solid #1e3a5f; border-radius: 20px; font-size: 12px; color: #60a5fa; }
-.es-open-studio { padding: 12px; background: #2563eb; border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
-.es-open-studio:hover { background: #1d4ed8; }
-.es-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.es-pulse { animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.es-studio { display: flex; flex-direction: column; height: calc(100vh - 53px); }
-.es-studio-body { display: flex; flex: 1; overflow: hidden; }
-.es-sidebar { width: 210px; background: #080f1e; border-right: 1px solid #1e3a5f; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
-.es-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #334155; margin-bottom: 2px; padding: 0 4px; }
-.es-track { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 9px; padding: 9px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: border-color 0.15s; }
-.es-track:hover { border-color: #2563eb; }
-.es-track.active { border-color: #2563eb; background: #112244; }
-.es-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.es-track-name { font-size: 12px; color: #94a3b8; flex: 1; }
-.es-vol { width: 44px; height: 3px; background: #1e3a5f; border-radius: 2px; }
-.es-vol-fill { height: 100%; border-radius: 2px; background: #2563eb; }
-.es-add { margin-top: auto; padding: 9px; border: 1px dashed #1e3a5f; border-radius: 9px; background: transparent; color: #475569; font-size: 12px; cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit; }
-.es-add:hover { border-color: #2563eb; color: #60a5fa; }
-.es-timeline { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-.es-tl-header { display: flex; align-items: center; gap: 12px; }
-.es-pill { padding: 4px 12px; background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 20px; font-size: 12px; color: #60a5fa; }
-.es-tl-area { background: #0a1428; border: 1px solid #1e3a5f; border-radius: 11px; flex: 1; padding: 16px; position: relative; overflow: hidden; }
-.es-ruler { display: flex; margin-bottom: 14px; }
-.es-tick { font-size: 10px; color: #334155; flex: 1; }
-.es-row { display: flex; align-items: center; height: 34px; margin-bottom: 9px; }
-.es-block { height: 30px; border-radius: 6px; position: relative; overflow: hidden; }
-.es-wf { position: absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; gap:1px; padding:4px 6px; opacity:0.45; }
-.es-wf-bar { width:2px; background:#fff; border-radius:1px; flex-shrink:0; }
-.es-ph { position:absolute; top:0; bottom:0; width:1px; background:#60a5fa; }
-.es-ph::before { content:''; position:absolute; top:-4px; left:-4px; width:9px; height:9px; background:#60a5fa; border-radius:50%; }
-.es-ai-panel { width: 210px; background: #080f1e; border-left: 1px solid #1e3a5f; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-.ai-btn { padding: 10px 12px; border-radius: 9px; border: none; font-size: 12px; cursor: pointer; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 8px; transition: all 0.15s; font-family: inherit; }
-.ai-btn.blue { background: #2563eb; color: #fff; }
-.ai-btn.blue:hover { background: #1d4ed8; }
-.ai-btn.outline { background: #0d1f3c; border: 1px solid #1e3a5f; color: #93c5fd; }
-.ai-btn.outline:hover { border-color: #2563eb; background: #112244; }
-.ai-chip { padding:7px 10px; background:#0d1f3c; border:1px solid #1e3a5f; border-radius:7px; font-size:11px; color:#475569; cursor:pointer; transition:all 0.15s; }
-.ai-chip:hover { border-color:#2563eb; color:#60a5fa; }
-.ai-inp { background:#0d1f3c; border:1px solid #1e3a5f; border-radius:9px; padding:9px 10px; color:#94a3b8; font-size:12px; width:100%; font-family:inherit; resize:none; }
-.ai-inp:focus { outline:none; border-color:#2563eb; }
-.ai-inp::placeholder { color:#334155; }
-.ai-send { width:100%; padding:9px; background:#1e3a5f; border:none; border-radius:9px; color:#60a5fa; font-size:12px; cursor:pointer; font-family:inherit; transition:all 0.15s; }
-.ai-send:hover { background:#2563eb; color:#fff; }
-.ai-response { background:#070d1a; border:1px solid #1e3a5f; border-radius:9px; padding:10px; font-size:11px; color:#64748b; line-height:1.6; display:none; }
-.es-bar { background: #08101f; border-top: 1px solid #1e3a5f; height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; gap: 16px; }
-.ctrl-grp { display: flex; align-items: center; gap: 10px; }
-.ctrl-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #1e3a5f; background: transparent; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: all 0.15s; font-family: inherit; }
-.ctrl-btn.play { background: #2563eb; border-color: #2563eb; color: #fff; width: 40px; height: 40px; font-size: 17px; }
-.ctrl-btn:hover:not(.play) { border-color: #2563eb; color: #60a5fa; }
-.ctrl-btn.play:hover { background: #1d4ed8; }
-.es-time { font-size: 12px; color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.prog-bar { flex: 1; height: 4px; background: #1e3a5f; border-radius: 2px; max-width: 300px; cursor: pointer; }
-.prog-fill { height: 100%; border-radius: 2px; background: #2563eb; pointer-events: none; }
-.es-dl { padding:8px 18px; background:transparent; border:1px solid #2563eb; border-radius:22px; color:#60a5fa; font-size:12px; cursor:pointer; font-family:inherit; transition:all 0.15s; }
-.es-dl:hover { background:#2563eb; color:#fff; }
+.es-badge {
+  font-size: 11px;
+  color: #a5b4fc;
+  background: rgba(59, 130, 246, 0.15);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #1d4ed8;
+}
 .hidden { display: none !important; }
+.es-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4f678f;
+  margin-bottom: 8px;
+}
+.es-card {
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, #101f3c, #0a1530);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.07);
+}
+
+/* Welcome */
+.es-welcome {
+  min-height: calc(100vh - 62px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 30px;
+}
+.es-welcome h1 { font-weight: 600; font-size: 34px; text-align: center; }
+.es-welcome p { color: var(--muted); text-align: center; max-width: 460px; line-height: 1.7; }
+.es-cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.es-home-card {
+  width: 190px;
+  padding: 24px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #0f1f3d;
+  cursor: pointer;
+  transition: all .18s;
+  text-align: center;
+}
+.es-home-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.es-home-card .icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #18315b;
+  font-size: 20px;
+}
+.es-home-card p { font-size: 12px; line-height: 1.5; color: #7f97bd; }
+.es-cta {
+  padding: 13px 34px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Generate */
+.es-generate {
+  min-height: calc(100vh - 62px);
+  padding: 36px;
+  display: grid;
+  place-items: center;
+}
+.es-generate-wrap {
+  width: min(860px, 100%);
+  display: grid;
+  gap: 14px;
+}
+.es-gen-box { padding: 20px; }
+.es-gen-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #070f20;
+  color: var(--text);
+  resize: vertical;
+}
+.es-gen-textarea:focus, .es-gen-select:focus { outline: none; border-color: var(--primary); }
+.es-gen-row { margin-top: 10px; display: flex; gap: 10px; }
+.es-gen-select {
+  flex: 1;
+  background: #070f20;
+  color: #94a3b8;
+  border: 1px solid var(--border);
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.es-gen-btn {
+  margin-top: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--primary-strong);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.es-gen-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.es-ai-card { padding: 18px; border: 1px solid #1d4ed8; }
+
+/* Studio */
+.es-studio { height: calc(100vh - 62px); display: flex; flex-direction: column; }
+.es-studio-body { flex: 1; display: grid; grid-template-columns: 280px 1fr 300px; overflow: hidden; }
+.es-panel {
+  background: rgba(8, 16, 31, 0.92);
+  border-right: 1px solid var(--border);
+  padding: 14px;
+  overflow-y: auto;
+}
+.es-panel.right { border-right: 0; border-left: 1px solid var(--border); }
+
+.track-item {
+  border: 1px solid var(--border);
+  background: #0c1933;
+  border-radius: 10px;
+  padding: 9px;
+  margin-bottom: 9px;
+}
+.track-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.track-dot { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
+.track-name { flex: 1; font-size: 12px; color: #cad7f2; }
+.track-mute {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: #8ca4cf;
+  font-size: 11px;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.track-mute.muted {
+  border-color: #7f1d1d;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+}
+.track-volume { width: 100%; accent-color: var(--primary); }
+.track-meta { margin-top: 6px; font-size: 11px; color: #7288ad; }
+
+.es-timeline {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.tl-header { display: flex; gap: 8px; align-items: center; }
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #0e1c37;
+  color: #9ec2ff;
+  font-size: 12px;
+}
+.tl-canvas {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #0a1428, #081121);
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.ruler { display: grid; grid-template-columns: repeat(8, 1fr); font-size: 10px; color: #4d6288; margin-bottom: 10px; }
+.tl-row { display: flex; align-items: center; height: 48px; margin-bottom: 7px; gap: 8px; }
+.tl-row-label { width: 64px; font-size: 11px; color: #8ea8d3; }
+.tl-row-lane {
+  flex: 1;
+  height: 40px;
+  border: 1px dashed #14305b;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.block {
+  height: 100%;
+  position: absolute;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.playhead {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #60a5fa;
+}
+.wf {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px;
+  opacity: 0.55;
+}
+.wf i { width: 2px; background: #fff; border-radius: 999px; }
+
+.ai-btn {
+  width: 100%;
+  border-radius: 9px;
+  padding: 10px;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.ai-btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.ai-btn.secondary { background: #0d1c38; color: #a5c4ff; }
+.ai-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px;
+  background: #09152b;
+  color: #c9dafd;
+  resize: vertical;
+}
+.ai-response {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  background: #081121;
+  border-radius: 9px;
+  padding: 10px;
+  color: #8ea8d3;
+  line-height: 1.6;
+  min-height: 72px;
+  font-size: 12px;
+}
+
+.es-bar {
+  border-top: 1px solid var(--border);
+  background: rgba(6, 14, 28, 0.95);
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ctrl-grp { display: flex; align-items: center; gap: 8px; }
+.ctrl-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: #c0d6ff;
+  cursor: pointer;
+}
+.ctrl-btn.play { width: 40px; height: 40px; background: #2563eb; border-color: #2563eb; color: #fff; }
+.ctrl-btn.recording { border-color: var(--danger); color: var(--danger); }
+.timeline-progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: #102549;
+  cursor: pointer;
+}
+.timeline-progress > div { height: 100%; border-radius: inherit; background: var(--primary); }
+.time-display { font-size: 12px; color: #8faad7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.export-btn {
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--primary-strong);
+  color: #9ec2ff;
+  background: transparent;
+  cursor: pointer;
+}
+.mic-monitor {
+  width: 180px;
+  font-size: 11px;
+  color: #83a0cf;
+  line-height: 1.4;
+}
+.mic-monitor audio { width: 100%; margin-top: 4px; height: 28px; }
+
+@media (max-width: 1024px) {
+  .es-studio-body { grid-template-columns: 240px 1fr; }
+  .es-panel.right { display: none; }
+}
+@media (max-width: 780px) {
+  .es-studio-body { grid-template-columns: 1fr; }
+  .es-panel { display: none; }
+  .mic-monitor { display: none; }
+}
 </style>
 </head>
 <body>
@@ -116,165 +375,385 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
     <button onclick="show('generate')">Generate</button>
     <button onclick="show('studio')">Studio</button>
   </nav>
-  <div class="es-badge">beta v0.2</div>
+  <div class="es-badge">MVP Beta</div>
 </header>
 
 <section id="screen-welcome" class="es-welcome">
-  <div style="text-align:center;"><h1>Create your song</h1><p style="margin-top:12px;">Choose how you want to start — AI handles the rest.</p></div>
-  <div class="es-cards">
-    <div class="es-card" onclick="show('studio')"><div class="es-icon">🎤</div><h3>Sing</h3><p>Record your voice and let AI make it perfect</p></div>
-    <div class="es-card featured" onclick="show('generate')"><div class="es-icon">🤖</div><h3>Generate</h3><p>Describe a song and AI builds it for you</p></div>
-    <div class="es-card" onclick="show('studio')"><div class="es-icon">🎹</div><h3>Play</h3><p>Plug in or use on-screen instruments</p></div>
+  <div>
+    <h1>Build songs like a real studio</h1>
+    <p style="margin-top:10px;">Record vocals, stack layers, and shape ideas with an AI co-producer — all in one clean DAW-style workspace.</p>
   </div>
-  <button class="es-cta" onclick="show('generate')">Start Creating</button>
+  <div class="es-cards">
+    <div class="es-home-card" onclick="show('studio')"><div class="icon">🎤</div><h3>Record Voice</h3><p>Capture takes and preview waveform instantly.</p></div>
+    <div class="es-home-card" onclick="show('generate')"><div class="icon">🤖</div><h3>Generate Idea</h3><p>Start with a prompt and open directly in the studio.</p></div>
+    <div class="es-home-card" onclick="show('studio')"><div class="icon">🎛️</div><h3>Arrange Tracks</h3><p>Lay down vocals, drums, melody and more.</p></div>
+  </div>
+  <button class="es-cta" onclick="show('studio')">Open Studio</button>
 </section>
 
 <section id="screen-generate" class="es-generate hidden">
-  <h2>Describe your track</h2>
-  <p>Tell the AI what you want — genre, mood, energy, reference artists. More detail = better result.</p>
-  <div class="es-suggestions">
-    <div class="es-sug" onclick="fillPrompt('dark melodic techno, emotional, deep bass, like Tale Of Us')">Dark melodic techno</div>
-    <div class="es-sug" onclick="fillPrompt('cinematic hip hop, lo-fi, melancholic, rainy day vibes')">Cinematic hip hop</div>
-    <div class="es-sug" onclick="fillPrompt('uplifting progressive house, euphoric, festival ready, big drop')">Progressive house</div>
-    <div class="es-sug" onclick="fillPrompt('ambient soundscape, meditative, sparse, deep breathing space')">Ambient meditation</div>
-    <div class="es-sug" onclick="fillPrompt('trap beat, hard, heavy 808s, dark melody, like Travis Scott')">Dark trap</div>
-  </div>
-  <div class="es-gen-box">
-    <textarea class="es-gen-textarea" id="gen-prompt" placeholder="dark melodic techno, emotional, deep bass, slow build, like Tale Of Us..."></textarea>
-    <div class="es-gen-row">
-      <select class="es-gen-select" id="gen-genre"><option value="">Genre (auto)</option><option>Techno</option><option>House</option><option>Hip Hop</option><option>Ambient</option><option>Trap</option><option>Pop</option><option>R&B</option><option>Drum & Bass</option></select>
-      <select class="es-gen-select" id="gen-mood"><option value="">Mood (auto)</option><option>Dark</option><option>Euphoric</option><option>Melancholic</option><option>Energetic</option><option>Meditative</option><option>Aggressive</option><option>Romantic</option></select>
+  <div class="es-generate-wrap">
+    <div class="es-card" style="padding:20px;">
+      <h2 style="font-weight:600;">Describe your track</h2>
+      <p style="margin-top:8px; color:var(--muted);">Type a direction, then jump into the timeline with prefilled track ideas.</p>
     </div>
-    <button class="es-gen-btn" id="gen-btn" onclick="generateTrack()"><span id="gen-btn-text">🤖 Generate Track</span></button>
-  </div>
-  <div class="es-ai-card hidden" id="ai-result">
-    <div class="es-ai-card-header">
-      <div style="width:36px;height:36px;border-radius:9px;background:#1e3a5f;display:flex;align-items:center;justify-content:center;font-size:18px;">🎛️</div>
-      <h3 id="result-title">Track concept</h3>
-      <div class="es-meta-pill" id="result-bpm">— BPM</div>
-      <div class="es-meta-pill" id="result-key">—</div>
+    <div class="es-card es-gen-box">
+      <textarea class="es-gen-textarea" id="gen-prompt" placeholder="Dark melodic house with emotional vocals and a huge final drop..."></textarea>
+      <div class="es-gen-row">
+        <select class="es-gen-select" id="gen-genre"><option>Auto Genre</option><option>House</option><option>Pop</option><option>Hip-Hop</option><option>Electronic</option><option>Ambient</option></select>
+        <select class="es-gen-select" id="gen-mood"><option>Auto Mood</option><option>Dark</option><option>Uplifting</option><option>Emotional</option><option>Aggressive</option></select>
+      </div>
+      <button class="es-gen-btn" id="gen-btn" onclick="generateTrack()">Generate Track Concept</button>
     </div>
-    <div class="es-track-pills" id="result-tracks"></div>
-    <div class="es-ai-feedback" id="result-feedback"></div>
-    <button class="es-open-studio" onclick="openStudio()">Open in Studio →</button>
+    <div class="es-card es-ai-card hidden" id="ai-result">
+      <h3 id="result-title">Untitled idea</h3>
+      <p id="result-feedback" style="margin-top:8px; color:#9ab4df;"></p>
+      <div id="result-tracks" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <button class="es-gen-btn" onclick="openStudio()" style="margin-top:14px;">Open in Studio →</button>
+    </div>
   </div>
 </section>
 
 <section id="screen-studio" class="es-studio hidden">
   <div class="es-studio-body">
-    <div class="es-sidebar">
-      <div class="es-label">Tracks</div>
-      <div id="studio-tracks">
-        <div class="es-track active"><div class="es-dot" style="background:#60a5fa;"></div><div class="es-track-name">Vocals</div><div class="es-vol"><div class="es-vol-fill" style="width:75%;"></div></div></div>
-        <div class="es-track"><div class="es-dot" style="background:#38bdf8;"></div><div class="es-track-name">Drums</div><div class="es-vol"><div class="es-vol-fill" style="width:88%;"></div></div></div>
-        <div class="es-track"><div class="es-dot" style="background:#818cf8;"></div><div class="es-track-name">Bass</div><div class="es-vol"><div class="es-vol-fill" style="width:60%;"></div></div></div>
-        <div class="es-track"><div class="es-dot" style="background:#34d399;"></div><div class="es-track-name">Synth</div><div class="es-vol"><div class="es-vol-fill" style="width:50%;"></div></div></div>
-        <div class="es-track"><div class="es-dot" style="background:#fb923c;"></div><div class="es-track-name">FX</div><div class="es-vol"><div class="es-vol-fill" style="width:35%;"></div></div></div>
+    <aside class="es-panel">
+      <div class="es-label">Tracks (Layers)</div>
+      <div id="track-list"></div>
+      <button class="ai-btn secondary" onclick="addTrack()">+ Add layer</button>
+    </aside>
+
+    <main class="es-timeline">
+      <div class="tl-header">
+        <div class="pill" id="studio-bpm">126 BPM</div>
+        <div class="pill" id="studio-key">C Minor</div>
+        <div class="pill" id="studio-title" style="margin-left:auto;">Studio Session</div>
       </div>
-      <button class="es-add">+ Add layer</button>
-    </div>
-    <div class="es-timeline">
-      <div class="es-tl-header">
-        <div class="es-pill" id="studio-bpm">128 BPM</div>
-        <div class="es-pill" id="studio-key">A Minor</div>
-        <div style="margin-left:auto;font-size:11px;color:#334155;" id="studio-title">Demo Track</div>
+      <div class="tl-canvas">
+        <div class="playhead" id="playhead" style="left: 28%;"></div>
+        <div class="ruler">
+          <span>0:00</span><span>0:15</span><span>0:30</span><span>0:45</span><span>1:00</span><span>1:15</span><span>1:30</span><span>1:45</span>
+        </div>
+        <div id="timeline-rows"></div>
       </div>
-      <div class="es-tl-area">
-        <div class="es-ph" id="playhead" style="left:32%;"></div>
-        <div class="es-ruler"><div class="es-tick">0:00</div><div class="es-tick">0:15</div><div class="es-tick">0:30</div><div class="es-tick">0:45</div><div class="es-tick">1:00</div><div class="es-tick">1:15</div></div>
-        <div class="es-row"><div class="es-block" style="background:#1e3a5f;width:55%;margin-left:2%;"><div class="es-wf" id="wf1"></div></div><div class="es-block" style="background:#1e3a5f;width:24%;margin-left:5%;opacity:0.6;"><div class="es-wf" id="wf2"></div></div></div>
-        <div class="es-row"><div class="es-block" style="background:#0c2a4a;width:90%;"><div class="es-wf" id="wf3"></div></div></div>
-        <div class="es-row"><div class="es-block" style="background:#1a1a4a;width:68%;"><div class="es-wf" id="wf4"></div></div><div class="es-block" style="background:#1a1a4a;width:18%;margin-left:3%;opacity:0.5;"></div></div>
-        <div class="es-row"><div class="es-block" style="background:#0a2a22;width:38%;margin-left:10%;"><div class="es-wf" id="wf5"></div></div><div class="es-block" style="background:#0a2a22;width:38%;margin-left:6%;"><div class="es-wf" id="wf6"></div></div></div>
-        <div class="es-row"><div class="es-block" style="background:#2a1a0a;width:18%;margin-left:36%;opacity:0.7;"></div></div>
-      </div>
-    </div>
-    <div class="es-ai-panel">
-      <div class="es-label">AI assistant</div>
-      <button class="ai-btn blue" onclick="askAI('Fix my vocals — make them pitch perfect and in time')">🎤 Fix my voice</button>
-      <button class="ai-btn outline" onclick="askAI('Enhance the overall mix — balance the levels and add warmth')">🎚️ Enhance mix</button>
-      <button class="ai-btn outline" onclick="askAI('Make the drop bigger and more impactful')">🚀 Make it bigger</button>
-      <button class="ai-btn outline" onclick="askAI('Add vocal harmonies to the existing melody')">🎵 Add harmonies</button>
-      <div style="margin-top:6px;">
-        <div class="es-label" style="margin-bottom:6px;">Quick ideas</div>
-        <div class="ai-chip" onclick="askAI('Add a punchy hard-hitting drop')">Add punchy drop</div>
-        <div class="ai-chip" style="margin-top:5px;" onclick="askAI('Make the track feel more emotional and melancholic')">Make it emotional</div>
-        <div class="ai-chip" style="margin-top:5px;" onclick="askAI('Make this festival ready — big energy, massive sound')">Festival ready</div>
-      </div>
-      <textarea class="ai-inp" id="ai-studio-input" rows="2" placeholder="What do you want to change?"></textarea>
-      <button class="ai-send" onclick="askAICustom()">Send to AI</button>
-      <div class="ai-response" id="ai-studio-response"></div>
-    </div>
+    </main>
+
+    <aside class="es-panel right">
+      <div class="es-label">AI Assistant</div>
+      <button class="ai-btn primary" onclick="simulateAI('Fix My Voice')">🎤 Fix My Voice</button>
+      <button class="ai-btn secondary" onclick="simulateAI('Enhance Mix')">🎚️ Enhance Mix</button>
+      <button class="ai-btn secondary" onclick="simulateAI('Make It Bigger')">🚀 Make It Bigger</button>
+      <textarea class="ai-input" id="ai-input" rows="3" placeholder="Describe what you want to improve..."></textarea>
+      <button class="ai-btn secondary" onclick="simulateCustomAI()">Send Prompt</button>
+      <div class="ai-response" id="ai-response">AI tips will appear here. No backend connected yet — this is a UI simulation.</div>
+    </aside>
   </div>
+
   <div class="es-bar">
     <div class="ctrl-grp">
-      <button class="ctrl-btn">↩</button>
-      <button class="ctrl-btn">⏮</button>
+      <button class="ctrl-btn" onclick="restartPlayback()">⏮</button>
       <button class="ctrl-btn play" id="play-btn" onclick="togglePlay()">▶</button>
-      <button class="ctrl-btn" style="color:#ef4444;">⏺</button>
+      <button class="ctrl-btn" id="record-btn" onclick="toggleRecording()">⏺</button>
     </div>
-    <div class="es-time" id="time-disp">0:32 / 2:47</div>
-    <div class="prog-bar" onclick="seekBar(event)"><div class="prog-fill" id="prog-fill" style="width:32%;"></div></div>
-    <button class="es-dl">↓ Export</button>
+
+    <div class="time-display" id="time-disp">0:28 / 2:00</div>
+
+    <div class="timeline-progress" onclick="seekBar(event)">
+      <div id="prog-fill" style="width: 28%;"></div>
+    </div>
+
+    <div class="mic-monitor" id="mic-monitor">No recording yet.</div>
+
+    <button class="export-btn">Export</button>
   </div>
 </section>
 
 <script>
-let playing=false,progress=32,total=167,iv=null,currentTrack=null;
-const COLORS=['#60a5fa','#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#a78bfa'];
-function show(s){['welcome','generate','studio'].forEach(n=>document.getElementById('screen-'+n).classList.toggle('hidden',n!==s));document.querySelectorAll('.es-nav button').forEach((b,i)=>b.classList.toggle('active',['welcome','generate','studio'][i]===s));}
-function fillPrompt(txt){document.getElementById('gen-prompt').value=txt;show('generate');}
-async function generateTrack(){
-  const prompt=document.getElementById('gen-prompt').value.trim();
-  if(!prompt){document.getElementById('gen-prompt').focus();return;}
-  const btn=document.getElementById('gen-btn'),btnText=document.getElementById('gen-btn-text');
-  btn.disabled=true;btnText.innerHTML='<div class="es-spinner"></div> AI is thinking...';
-  document.getElementById('ai-result').classList.add('hidden');
-  const genre=document.getElementById('gen-genre').value,mood=document.getElementById('gen-mood').value;
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:'You are EtherStudio AI music producer. Respond ONLY with valid JSON no markdown.\n{"title":"2-4 word track title","bpm":number,"key":"like A Minor","tracks":["name1","name2","name3","name4","name5"],"feedback":"2-3 sentences specific producer advice"}',messages:[{role:'user',content:`Track concept: "${prompt}"${genre?' Genre:'+genre:''}.${mood?' Mood:'+mood:''}.`}]})});
-    const data=await res.json();
-    const parsed=JSON.parse(data.content[0].text);
-    currentTrack=parsed;showResult(parsed);
-  }catch(e){btn.disabled=false;btnText.innerHTML='🤖 Generate Track';alert('Something went wrong. Try again.');}
+const COLORS = ['#60a5fa', '#22d3ee', '#818cf8', '#34d399', '#fb923c', '#f472b6', '#a78bfa'];
+
+const state = {
+  playing: false,
+  progressSec: 28,
+  totalSec: 120,
+  timer: null,
+  currentTrack: null,
+  tracks: [
+    { id: crypto.randomUUID(), name: 'Vocals', color: '#60a5fa', volume: 78, muted: false },
+    { id: crypto.randomUUID(), name: 'Drums', color: '#22d3ee', volume: 82, muted: false },
+    { id: crypto.randomUUID(), name: 'Melody', color: '#818cf8', volume: 71, muted: false }
+  ],
+  mediaRecorder: null,
+  micStream: null,
+  chunks: [],
+  recording: false
+};
+
+function show(screen) {
+  ['welcome', 'generate', 'studio'].forEach((s) => {
+    document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== screen);
+  });
+  document.querySelectorAll('.es-nav button').forEach((btn, idx) => {
+    btn.classList.toggle('active', ['welcome', 'generate', 'studio'][idx] === screen);
+  });
 }
-function showResult(d){
-  document.getElementById('result-title').textContent=d.title||'Track concept';
-  document.getElementById('result-bpm').textContent=(d.bpm||'—')+' BPM';
-  document.getElementById('result-key').textContent=d.key||'—';
-  document.getElementById('result-feedback').textContent=d.feedback||'';
-  const pills=document.getElementById('result-tracks');pills.innerHTML='';
-  (d.tracks||[]).forEach(t=>{const el=document.createElement('div');el.className='es-track-pill';el.textContent=t;pills.appendChild(el);});
+
+function generateTrack() {
+  const prompt = document.getElementById('gen-prompt').value.trim();
+  const button = document.getElementById('gen-btn');
+  if (!prompt) {
+    document.getElementById('gen-prompt').focus();
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'Generating...';
+
+  setTimeout(() => {
+    const title = prompt.split(' ').slice(0, 3).join(' ') || 'New Idea';
+    const idea = {
+      title: title.charAt(0).toUpperCase() + title.slice(1),
+      bpm: 118 + Math.round(Math.random() * 18),
+      key: ['C Minor', 'A Minor', 'F Major', 'D Minor'][Math.floor(Math.random() * 4)],
+      tracks: ['Vocals', 'Drums', 'Melody', 'Bass', 'FX'],
+      feedback: 'Solid concept. Start with a simple 8-bar groove, keep vocals upfront, then automate energy into the final section.'
+    };
+
+    state.currentTrack = idea;
+    showResult(idea);
+    button.disabled = false;
+    button.textContent = 'Generate Track Concept';
+  }, 700);
+}
+
+function showResult(data) {
   document.getElementById('ai-result').classList.remove('hidden');
-  document.getElementById('gen-btn').disabled=false;document.getElementById('gen-btn-text').innerHTML='🤖 Generate Track';
-  document.getElementById('ai-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('result-title').textContent = `${data.title} · ${data.bpm} BPM · ${data.key}`;
+  document.getElementById('result-feedback').textContent = data.feedback;
+
+  const wraps = document.getElementById('result-tracks');
+  wraps.innerHTML = '';
+  data.tracks.forEach((track) => {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = track;
+    wraps.appendChild(pill);
+  });
 }
-function openStudio(){
-  if(currentTrack){
-    document.getElementById('studio-bpm').textContent=(currentTrack.bpm||128)+' BPM';
-    document.getElementById('studio-key').textContent=currentTrack.key||'A Minor';
-    document.getElementById('studio-title').textContent=currentTrack.title||'New Track';
-    const c=document.getElementById('studio-tracks');c.innerHTML='';
-    (currentTrack.tracks||['Drums','Bass','Synth','Vocals','FX']).forEach((t,i)=>{const el=document.createElement('div');el.className='es-track'+(i===0?' active':'');const vol=Math.round(40+Math.random()*55);el.innerHTML=`<div class="es-dot" style="background:${COLORS[i%COLORS.length]};"></div><div class="es-track-name">${t}</div><div class="es-vol"><div class="es-vol-fill" style="width:${vol}%;"></div></div>`;c.appendChild(el);});
+
+function openStudio() {
+  if (state.currentTrack) {
+    document.getElementById('studio-bpm').textContent = `${state.currentTrack.bpm} BPM`;
+    document.getElementById('studio-key').textContent = state.currentTrack.key;
+    document.getElementById('studio-title').textContent = state.currentTrack.title;
+
+    const baseTracks = state.currentTrack.tracks.slice(0, 5);
+    state.tracks = baseTracks.map((name, idx) => ({
+      id: crypto.randomUUID(),
+      name,
+      color: COLORS[idx % COLORS.length],
+      volume: 58 + Math.round(Math.random() * 28),
+      muted: false
+    }));
+    renderStudio();
   }
   show('studio');
 }
-async function askAI(q){
-  const resp=document.getElementById('ai-studio-response');resp.style.display='block';resp.textContent='...';resp.classList.add('es-pulse');
-  const ctx=currentTrack?`Track: "${currentTrack.title}", ${currentTrack.bpm} BPM, ${currentTrack.key}.`:'';
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are an AI music producer in EtherStudio. ${ctx} Give short specific inspiring producer advice in 2-3 sentences. Speak like a real producer.`,messages:[{role:'user',content:q}]})});
-    const data=await res.json();resp.classList.remove('es-pulse');resp.textContent=data.content[0].text;
-  }catch(e){resp.classList.remove('es-pulse');resp.textContent='Connection issue. Try again.';}
+
+function renderTrackList() {
+  const list = document.getElementById('track-list');
+  list.innerHTML = '';
+
+  state.tracks.forEach((track, index) => {
+    const item = document.createElement('div');
+    item.className = 'track-item';
+    item.innerHTML = `
+      <div class="track-top">
+        <span class="track-dot" style="background:${track.color}"></span>
+        <div class="track-name">${track.name}</div>
+        <button class="track-mute ${track.muted ? 'muted' : ''}" data-action="mute">${track.muted ? 'Muted' : 'Mute'}</button>
+      </div>
+      <input class="track-volume" type="range" min="0" max="100" value="${track.volume}" data-action="volume" />
+      <div class="track-meta">Volume: <span>${track.volume}</span>%</div>
+    `;
+
+    item.querySelector('[data-action="mute"]').addEventListener('click', () => {
+      state.tracks[index].muted = !state.tracks[index].muted;
+      renderStudio();
+    });
+
+    item.querySelector('[data-action="volume"]').addEventListener('input', (event) => {
+      state.tracks[index].volume = Number(event.target.value);
+      item.querySelector('.track-meta span').textContent = String(state.tracks[index].volume);
+    });
+
+    list.appendChild(item);
+  });
 }
-function askAICustom(){const val=document.getElementById('ai-studio-input').value.trim();if(val){document.getElementById('ai-studio-input').value='';askAI(val);}}
-function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');}
-function updateUI(){document.getElementById('time-disp').textContent=fmt(progress)+' / '+fmt(total);const pct=Math.round(progress/total*100);document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('playhead').style.left=pct+'%';}
-function togglePlay(){playing=!playing;document.getElementById('play-btn').textContent=playing?'⏸':'▶';if(playing){iv=setInterval(()=>{progress=Math.min(progress+1,total);updateUI();if(progress>=total){playing=false;clearInterval(iv);document.getElementById('play-btn').textContent='▶';}},1000);}else{clearInterval(iv);}}
-function seekBar(e){const r=e.currentTarget.getBoundingClientRect();progress=Math.round((e.clientX-r.left)/r.width*total);updateUI();}
-function waveform(id,n,max){const el=document.getElementById(id);if(!el)return;for(let i=0;i<n;i++){const b=document.createElement('div');b.className='es-wf-bar';b.style.height=Math.round(4+Math.random()*(max-4))+'px';el.appendChild(b);}}
-waveform('wf1',60,20);waveform('wf2',24,16);waveform('wf3',90,14);waveform('wf4',68,18);waveform('wf5',38,12);waveform('wf6',38,12);
-updateUI();
+
+function renderTimeline() {
+  const rows = document.getElementById('timeline-rows');
+  rows.innerHTML = '';
+
+  state.tracks.slice(0, 6).forEach((track, idx) => {
+    const row = document.createElement('div');
+    row.className = 'tl-row';
+
+    const laneOpacity = track.muted ? 0.4 : 1;
+    const blockWidth = 38 + (idx * 9) % 42;
+    const blockLeft = 4 + (idx * 7) % 35;
+
+    row.innerHTML = `
+      <div class="tl-row-label">${track.name}</div>
+      <div class="tl-row-lane" style="opacity:${laneOpacity}">
+        <div class="block" style="left:${blockLeft}%; width:${blockWidth}%; background:${track.color}33; border-color:${track.color}88;">
+          <div class="wf" id="wf-${track.id}"></div>
+        </div>
+      </div>
+    `;
+
+    rows.appendChild(row);
+    generateWaveform(`wf-${track.id}`, Math.max(18, Math.round((blockWidth / 100) * 90)), 20 - idx);
+  });
+}
+
+function renderStudio() {
+  renderTrackList();
+  renderTimeline();
+}
+
+function addTrack() {
+  const suggestions = ['Pad', '808', 'Lead', 'Perc', 'FX'];
+  const name = suggestions[Math.floor(Math.random() * suggestions.length)] + ` ${state.tracks.length - 1}`;
+  state.tracks.push({
+    id: crypto.randomUUID(),
+    name,
+    color: COLORS[state.tracks.length % COLORS.length],
+    volume: 70,
+    muted: false
+  });
+  renderStudio();
+}
+
+function simulateAI(action) {
+  const response = document.getElementById('ai-response');
+  const responses = {
+    'Fix My Voice': 'I tightened vocal timing, applied transparent pitch correction, and cleaned low-end rumble. Try +2 dB at 4 kHz for more presence.',
+    'Enhance Mix': 'I balanced the drum bus and added subtle glue compression on the master. Your hook now hits cleaner without clipping.',
+    'Make It Bigger': 'I widened the synth layers and added rising impacts into the drop. Automate reverb tails in the last 2 bars for extra lift.'
+  };
+  response.textContent = responses[action] || 'Done. I refined the arrangement and improved overall clarity.';
+}
+
+function simulateCustomAI() {
+  const input = document.getElementById('ai-input');
+  const response = document.getElementById('ai-response');
+  if (!input.value.trim()) return;
+
+  response.textContent = `Got it: "${input.value.trim()}". Suggested move: simplify the verse instrumentation, push vocal delay in transitions, and automate a 1.5 dB lift into the chorus.`;
+  input.value = '';
+}
+
+function formatTime(seconds) {
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+}
+
+function updatePlaybackUI() {
+  const progressPct = Math.max(0, Math.min(100, Math.round((state.progressSec / state.totalSec) * 100)));
+  document.getElementById('time-disp').textContent = `${formatTime(state.progressSec)} / ${formatTime(state.totalSec)}`;
+  document.getElementById('prog-fill').style.width = `${progressPct}%`;
+  document.getElementById('playhead').style.left = `${progressPct}%`;
+}
+
+function togglePlay() {
+  state.playing = !state.playing;
+  document.getElementById('play-btn').textContent = state.playing ? '⏸' : '▶';
+
+  if (state.playing) {
+    state.timer = setInterval(() => {
+      state.progressSec = Math.min(state.totalSec, state.progressSec + 1);
+      updatePlaybackUI();
+      if (state.progressSec >= state.totalSec) {
+        togglePlay();
+      }
+    }, 1000);
+  } else {
+    clearInterval(state.timer);
+    state.timer = null;
+  }
+}
+
+function restartPlayback() {
+  state.progressSec = 0;
+  updatePlaybackUI();
+}
+
+function seekBar(event) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const relative = (event.clientX - rect.left) / rect.width;
+  state.progressSec = Math.round(relative * state.totalSec);
+  updatePlaybackUI();
+}
+
+function generateWaveform(containerId, bars = 50, max = 18) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (let i = 0; i < bars; i += 1) {
+    const bar = document.createElement('i');
+    bar.style.height = `${Math.max(3, Math.round(Math.random() * max))}px`;
+    container.appendChild(bar);
+  }
+}
+
+async function toggleRecording() {
+  const recordBtn = document.getElementById('record-btn');
+
+  if (!state.recording) {
+    try {
+      state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      state.mediaRecorder = new MediaRecorder(state.micStream);
+      state.chunks = [];
+
+      state.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) state.chunks.push(event.data);
+      };
+
+      state.mediaRecorder.onstop = () => {
+        const blob = new Blob(state.chunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        showMicPreview(url, blob.size);
+
+        if (state.micStream) {
+          state.micStream.getTracks().forEach((track) => track.stop());
+        }
+      };
+
+      state.mediaRecorder.start();
+      state.recording = true;
+      recordBtn.classList.add('recording');
+      recordBtn.textContent = '⏹';
+      document.getElementById('mic-monitor').textContent = 'Recording in progress...';
+    } catch (error) {
+      document.getElementById('mic-monitor').textContent = 'Microphone permission denied or unavailable.';
+    }
+  } else {
+    state.recording = false;
+    recordBtn.classList.remove('recording');
+    recordBtn.textContent = '⏺';
+    if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+      state.mediaRecorder.stop();
+    }
+  }
+}
+
+function showMicPreview(url, size) {
+  const holder = document.getElementById('mic-monitor');
+  const kb = Math.max(1, Math.round(size / 1024));
+  holder.innerHTML = `Last take (${kb} KB)<audio controls src="${url}"></audio>`;
+}
+
+renderStudio();
+updatePlaybackUI();
 </script>
 </body>
 </html>
