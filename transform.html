@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtherStudio — Transform</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #03070f;
+    --bg2:      #060d1a;
+    --bg3:      #091526;
+    --surface:  #0c1d38;
+    --surface2: #0f2244;
+    --border:   #162d52;
+    --border2:  #1e3d6e;
+    --blue:     #3b82f6;
+    --blue2:    #60a5fa;
+    --blue3:    #93c5fd;
+    --purple:   #8b5cf6;
+    --purple2:  #a78bfa;
+    --orange:   #f97316;
+    --orange2:  #fb923c;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --text:     #e2eeff;
+    --muted:    #6b8ab5;
+    --muted2:   #4a6a96;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 15%, rgba(255,255,255,0.35) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 55%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 85%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 40%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  }
+
+  .orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(90px); }
+  .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%); top: -150px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%); bottom: -100px; left: -100px; }
+
+  .content { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 56px;
+    background: rgba(3,7,15,0.9); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-left { display: flex; align-items: center; gap: 24px; }
+
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo-icon { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg,#1d4ed8,#3b82f6); display: flex; align-items: center; justify-content: center; }
+  .logo-crystal { width: 13px; height: 13px; background: white; clip-path: polygon(50% 0%,100% 38%,80% 100%,20% 100%,0% 38%); opacity: 0.9; }
+  .logo-text { font-size: 16px; font-weight: 700; color: #fff; }
+  .logo-text span { color: var(--blue3); font-weight: 400; }
+
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    color: var(--muted); text-decoration: none; transition: all 0.15s; cursor: pointer;
+    border: none; background: none; font-family: inherit;
+  }
+  .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .nav-link.active { color: var(--purple2); background: rgba(139,92,246,0.1); }
+
+  /* ── HERO ── */
+  .page-hero {
+    padding: 72px 48px 56px;
+    max-width: 1100px; margin: 0 auto; text-align: center;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--purple2); background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.25); padding: 6px 16px; border-radius: 99px;
+    margin-bottom: 28px;
+  }
+  .page-hero h1 {
+    font-size: clamp(36px, 6vw, 68px); font-weight: 800; letter-spacing: -0.03em;
+    color: #fff; line-height: 1.05; margin-bottom: 18px;
+  }
+  .page-hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .page-hero p {
+    font-size: 17px; color: var(--muted); line-height: 1.7;
+    max-width: 540px; margin: 0 auto;
+  }
+
+  /* ── MODE SELECTOR ── */
+  .mode-selector {
+    display: flex; gap: 12px; justify-content: center;
+    padding: 0 48px 56px; max-width: 900px; margin: 0 auto;
+  }
+
+  .mode-btn {
+    flex: 1; padding: 20px 16px; border-radius: 16px; cursor: pointer;
+    border: 2px solid var(--border); background: var(--surface);
+    transition: all 0.2s; text-align: center;
+  }
+  .mode-btn:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .mode-btn.active-mode { transform: translateY(-2px); }
+  .mode-btn.mode-pitch.active-mode { border-color: var(--blue); background: rgba(59,130,246,0.08); }
+  .mode-btn.mode-remix.active-mode { border-color: var(--purple); background: rgba(139,92,246,0.08); }
+  .mode-btn.mode-restore.active-mode { border-color: var(--orange); background: rgba(249,115,22,0.08); }
+
+  .mode-btn-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+  .mode-btn h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .mode-btn p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .mode-tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 99px; margin-bottom: 10px;
+  }
+  .tag-blue { background: rgba(59,130,246,0.15); color: var(--blue3); }
+  .tag-purple { background: rgba(139,92,246,0.15); color: var(--purple2); }
+  .tag-orange { background: rgba(249,115,22,0.15); color: var(--orange2); }
+
+  /* ── MAIN WORKSPACE ── */
+  .workspace {
+    max-width: 900px; margin: 0 auto; padding: 0 48px 80px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 2px dashed var(--border2); border-radius: 20px;
+    padding: 48px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface); margin-bottom: 24px;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--blue); background: rgba(59,130,246,0.06);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 36px; margin-bottom: 14px; display: block; }
+  .upload-zone h3 { font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--muted); }
+  .upload-formats {
+    display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap;
+  }
+  .fmt-pill {
+    font-size: 11px; padding: 3px 10px; border-radius: 99px;
+    border: 1px solid var(--border2); color: var(--muted2); background: var(--bg3);
+  }
+
+  /* FILE LOADED STATE */
+  .file-loaded {
+    border: 1px solid var(--border2); border-radius: 16px;
+    padding: 20px; background: var(--surface); margin-bottom: 24px;
+    display: none;
+  }
+  .file-loaded.visible { display: block; }
+  .file-info { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .file-icon-box {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .file-details { flex: 1; }
+  .file-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+  .file-meta { font-size: 12px; color: var(--muted); }
+  .file-remove {
+    font-size: 12px; color: var(--muted); cursor: pointer; padding: 6px 12px;
+    border: 1px solid var(--border); border-radius: 8px; background: none;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .file-remove:hover { color: var(--red); border-color: var(--red); }
+
+  /* WAVEFORM DISPLAY */
+  .waveform-display {
+    height: 64px; border-radius: 10px; background: var(--bg3);
+    border: 1px solid var(--border); overflow: hidden;
+    display: flex; align-items: center; gap: 1px; padding: 8px;
+  }
+  .waveform-display span {
+    display: block; width: 3px; border-radius: 2px; flex-shrink: 0;
+  }
+
+  /* AI ANALYSIS */
+  .analysis-bar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    padding: 16px; border-radius: 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    margin-top: 14px;
+  }
+  .analysis-chip {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 8px 14px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border2);
+  }
+  .chip-label { font-size: 10px; color: var(--muted2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .chip-value { font-size: 14px; font-weight: 700; color: #fff; }
+
+  /* SECTION CARDS */
+  .transform-panel {
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); overflow: hidden;
+    display: none; margin-bottom: 24px;
+  }
+  .transform-panel.visible { display: block; }
+
+  .panel-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .panel-header-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .icon-blue { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25); }
+  .icon-purple { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25); }
+  .icon-orange { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.25); }
+
+  .panel-header-text h3 { font-size: 17px; font-weight: 700; color: #fff; }
+  .panel-header-text p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .panel-body { padding: 24px; }
+
+  /* CONTROLS */
+  .control-row {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+  }
+  .control-label { font-size: 13px; font-weight: 500; color: var(--text); min-width: 140px; }
+  .control-label small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+  .slider-wrap { flex: 1; }
+  .es-slider { width: 100%; accent-color: var(--blue); cursor: pointer; }
+  .slider-val { font-size: 13px; font-weight: 700; color: var(--blue2); min-width: 48px; text-align: right; }
+
+  .semitone-display {
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center; margin: 20px 0;
+  }
+  .semi-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--border2); background: var(--surface2);
+    color: var(--text); font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .semi-btn:hover { border-color: var(--blue); background: rgba(59,130,246,0.1); }
+
+  .semi-value {
+    font-size: 36px; font-weight: 800; color: #fff;
+    min-width: 80px; text-align: center; letter-spacing: -0.02em;
+  }
+  .semi-label { font-size: 13px; color: var(--muted); text-align: center; }
+  .semi-note { font-size: 14px; color: var(--blue2); font-weight: 600; text-align: center; }
+
+  /* KEY GRID */
+  .key-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 20px;
+  }
+  .key-btn {
+    padding: 9px 6px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--muted); font-size: 12px; font-weight: 500;
+    cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit;
+  }
+  .key-btn:hover { border-color: var(--border2); color: var(--text); }
+  .key-btn.selected { border-color: var(--blue); color: var(--blue2); background: rgba(59,130,246,0.1); }
+
+  /* STYLE GRID */
+  .style-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+  }
+  .style-card {
+    padding: 16px 12px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--bg3); cursor: pointer; text-align: center; transition: all 0.2s;
+  }
+  .style-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .style-card.selected { border-color: var(--purple); background: rgba(139,92,246,0.1); }
+  .style-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+  .style-name { font-size: 12px; font-weight: 600; color: #fff; }
+  .style-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* STEM DISPLAY */
+  .stem-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;
+  }
+  .stem-card {
+    padding: 14px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--bg3); display: flex; flex-direction: column; gap: 8px;
+  }
+  .stem-header { display: flex; align-items: center; gap: 8px; }
+  .stem-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .stem-name { font-size: 12px; font-weight: 600; color: #fff; flex: 1; }
+  .stem-toggle {
+    width: 30px; height: 17px; border-radius: 99px;
+    background: var(--blue); border: none; cursor: pointer; position: relative;
+  }
+  .stem-toggle::after {
+    content: ''; position: absolute; width: 11px; height: 11px; border-radius: 50%;
+    background: white; top: 3px; right: 3px; transition: transform 0.2s;
+  }
+  .stem-toggle.off { background: var(--border2); }
+  .stem-toggle.off::after { transform: translateX(-13px); }
+  .stem-waveform {
+    height: 28px; border-radius: 6px; background: var(--bg2);
+    display: flex; align-items: center; gap: 1px; padding: 4px; overflow: hidden;
+  }
+  .stem-waveform span { display: block; width: 2px; border-radius: 1px; flex-shrink: 0; }
+
+  /* RESTORE OPTIONS */
+  .restore-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;
+  }
+  .restore-option {
+    padding: 16px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--bg3); transition: all 0.15s; cursor: pointer;
+  }
+  .restore-option:hover { border-color: var(--border2); }
+  .restore-option.selected { border-color: var(--orange); background: rgba(249,115,22,0.08); }
+  .restore-option h5 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .restore-option p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* INTENSITY */
+  .intensity-row {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .intensity-btn {
+    flex: 1; min-width: 80px; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg3);
+    color: var(--muted); font-size: 12px; font-weight: 500;
+    cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit;
+  }
+  .intensity-btn:hover { border-color: var(--border2); color: var(--text); }
+  .intensity-btn.selected-int { border-color: var(--orange); color: var(--orange2); background: rgba(249,115,22,0.08); }
+
+  /* PROGRESS */
+  .process-area { display: none; }
+  .process-area.visible { display: block; }
+
+  .process-steps {
+    display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;
+  }
+  .process-step {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; border-radius: 10px;
+    background: var(--bg3); border: 1px solid var(--border);
+  }
+  .step-indicator {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .step-pending { background: var(--surface); border: 1px solid var(--border2); color: var(--muted); }
+  .step-active { background: var(--blue); color: white; animation: spin 1s linear infinite; }
+  .step-done { background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.4); color: var(--green); }
+
+  @keyframes spin { 0%{box-shadow: 0 0 0 2px rgba(59,130,246,0.3);} 50%{box-shadow: 0 0 0 6px rgba(59,130,246,0);} 100%{box-shadow: 0 0 0 2px rgba(59,130,246,0.3);} }
+
+  .step-text { font-size: 13px; color: var(--text); }
+  .step-subtext { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .progress-track {
+    height: 6px; background: var(--surface); border-radius: 99px;
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .progress-fill {
+    height: 100%; border-radius: inherit; width: 0%;
+    transition: width 0.4s ease;
+  }
+  .fill-blue { background: linear-gradient(90deg, #1d4ed8, var(--blue)); }
+  .fill-purple { background: linear-gradient(90deg, #6d28d9, var(--purple)); }
+  .fill-orange { background: linear-gradient(90deg, #c2410c, var(--orange)); }
+
+  /* RESULT */
+  .result-area { display: none; }
+  .result-area.visible { display: block; }
+
+  .result-card {
+    border: 1px solid var(--border2); border-radius: 16px;
+    background: var(--surface); padding: 24px; margin-bottom: 16px;
+  }
+  .result-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+  }
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 99px;
+  }
+  .badge-green { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+
+  .result-waveform-wrap { margin-bottom: 20px; }
+  .result-label { font-size: 11px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  .compare-waves { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wave-box { }
+  .wave-box .result-label { }
+  .waveform-before { height: 52px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); display: flex; align-items: center; gap: 1px; padding: 6px; overflow: hidden; }
+  .waveform-before span { display: block; width: 3px; border-radius: 2px; background: var(--muted2); flex-shrink: 0; }
+  .waveform-after { height: 52px; border-radius: 8px; background: var(--bg2); border: 1px solid rgba(59,130,246,0.3); display: flex; align-items: center; gap: 1px; padding: 6px; overflow: hidden; }
+  .waveform-after span { display: block; width: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .result-btn {
+    padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.15s; border: none;
+  }
+  .result-btn-primary { background: var(--blue); color: white; }
+  .result-btn-primary:hover { background: #2563eb; }
+  .result-btn-outline {
+    background: transparent; border: 1px solid var(--border2); color: var(--muted);
+  }
+  .result-btn-outline:hover { border-color: var(--blue); color: var(--text); }
+
+  /* ACTION BTN */
+  .action-btn {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .action-btn-blue { background: linear-gradient(135deg,#1d4ed8,var(--blue)); color: white; box-shadow: 0 8px 24px rgba(37,99,235,0.3); }
+  .action-btn-blue:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(37,99,235,0.4); }
+  .action-btn-purple { background: linear-gradient(135deg,#6d28d9,var(--purple)); color: white; box-shadow: 0 8px 24px rgba(109,40,217,0.3); }
+  .action-btn-purple:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(109,40,217,0.4); }
+  .action-btn-orange { background: linear-gradient(135deg,#c2410c,var(--orange)); color: white; box-shadow: 0 8px 24px rgba(194,65,12,0.3); }
+  .action-btn-orange:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(194,65,12,0.4); }
+  .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); font-size: 13px; font-weight: 500;
+    padding: 10px 22px; border-radius: 99px; z-index: 300;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 700px) {
+    nav { padding: 0 20px; }
+    .page-hero { padding: 56px 20px 40px; }
+    .mode-selector { padding: 0 20px 40px; flex-direction: column; }
+    .workspace { padding: 0 20px 60px; }
+    .key-grid { grid-template-columns: repeat(4,1fr); }
+    .style-grid { grid-template-columns: repeat(2,1fr); }
+    .compare-waves { grid-template-columns: 1fr; }
+    .stem-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="content">
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon"><div class="logo-crystal"></div></div>
+      <div class="logo-text">Ether<span>Studio</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="studio.html" class="nav-link">🎤 Studio</a>
+      <button class="nav-link active">🔄 Transform</button>
+    </div>
+  </div>
+  <a href="studio.html" class="nav-link" style="border:1px solid var(--border2);border-radius:8px;">← Back to Studio</a>
+</nav>
+
+<!-- HERO -->
+<div class="page-hero">
+  <div class="hero-tag">✦ Transform mode</div>
+  <h1>Your tracks,<br><em>reimagined.</em></h1>
+  <p>Upload any track and reshape it completely — change the key, remix the style, or restore a rough recording to studio quality.</p>
+</div>
+
+<!-- MODE SELECTOR -->
+<div class="mode-selector">
+  <div class="mode-btn mode-pitch active-mode" onclick="selectMode('pitch')">
+    <div class="mode-tag tag-blue">Pitch</div>
+    <div class="mode-btn-icon">🎵</div>
+    <h3>Pitch Shift</h3>
+    <p>Transpose any track to a new key without changing the tempo</p>
+  </div>
+  <div class="mode-btn mode-remix" onclick="selectMode('remix')">
+    <div class="mode-tag tag-purple">Remix</div>
+    <div class="mode-btn-icon">🔀</div>
+    <h3>AI Remix</h3>
+    <p>Split stems and rebuild your track in a completely new style</p>
+  </div>
+  <div class="mode-btn mode-restore" onclick="selectMode('restore')">
+    <div class="mode-tag tag-orange">Restore</div>
+    <div class="mode-btn-icon">✨</div>
+    <h3>Restore</h3>
+    <p>Clean up a live recording or demo to studio quality</p>
+  </div>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+    <input type="file" accept="audio/*" onchange="handleFile(event)">
+    <span class="upload-icon">🎵</span>
+    <h3>Drop your track here</h3>
+    <p>Or click to browse your files</p>
+    <div class="upload-formats">
+      <span class="fmt-pill">MP3</span>
+      <span class="fmt-pill">WAV</span>
+      <span class="fmt-pill">FLAC</span>
+      <span class="fmt-pill">AAC</span>
+      <span class="fmt-pill">OGG</span>
+    </div>
+  </div>
+
+  <!-- FILE LOADED -->
+  <div class="file-loaded" id="file-loaded">
+    <div class="file-info">
+      <div class="file-icon-box">🎵</div>
+      <div class="file-details">
+        <div class="file-name" id="file-name">track.mp3</div>
+        <div class="file-meta" id="file-meta">Analyzing...</div>
+      </div>
+      <button class="file-remove" onclick="removeFile()">✕ Remove</button>
+    </div>
+    <div class="waveform-display" id="file-waveform"></div>
+    <div class="analysis-bar" id="analysis-bar">
+      <div class="analysis-chip">
+        <span class="chip-label">Key detected</span>
+        <span class="chip-value" id="chip-key">A Minor</span>
+      </div>
+      <div class="analysis-chip">
+        <span class="chip-label">BPM</span>
+        <span class="chip-value" id="chip-bpm">124</span>
+      </div>
+      <div class="analysis-chip">
+        <span class="chip-label">Duration</span>
+        <span class="chip-value" id="chip-dur">3:42</span>
+      </div>
+      <div class="analysis-chip">
+        <span class="chip-label">Genre</span>
+        <span class="chip-value" id="chip-genre">Pop</span>
+      </div>
+      <div class="analysis-chip">
+        <span class="chip-label">Quality</span>
+        <span class="chip-value" id="chip-quality">320 kbps</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PITCH PANEL ── -->
+  <div class="transform-panel" id="pitch-panel">
+    <div class="panel-header">
+      <div class="panel-header-icon icon-blue">🎵</div>
+      <div class="panel-header-text">
+        <h3>Pitch Shift</h3>
+        <p>Transpose without changing tempo — perfect for DJs and singers</p>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div class="semitone-display">
+        <button class="semi-btn" onclick="changeSemi(-1)">−</button>
+        <div>
+          <div class="semi-value" id="semi-value">0</div>
+          <div class="semi-label">semitones</div>
+          <div class="semi-note" id="semi-note">Original key</div>
+        </div>
+        <button class="semi-btn" onclick="changeSemi(+1)">+</button>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Fine tune
+          <small>Precise pitch adjustment</small>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" class="es-slider" min="-50" max="50" value="0"
+            oninput="document.getElementById('fine-val').textContent=this.value+'¢'">
+        </div>
+        <div class="slider-val" id="fine-val">0¢</div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Formant shift
+          <small>Keeps natural timbre</small>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" class="es-slider" min="-6" max="6" value="0" step="0.1"
+            oninput="document.getElementById('formant-val').textContent=this.value">
+        </div>
+        <div class="slider-val" id="formant-val">0</div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div class="result-label" style="margin-bottom:10px;">Target key</div>
+        <div class="key-grid" id="key-grid"></div>
+      </div>
+
+      <div id="pitch-process" class="process-area">
+        <div class="process-steps" id="pitch-steps"></div>
+        <div class="progress-track"><div class="progress-fill fill-blue" id="pitch-progress"></div></div>
+      </div>
+
+      <div id="pitch-result" class="result-area">
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-badge badge-green">✓ Pitch shifted successfully</span>
+          </div>
+          <div class="compare-waves">
+            <div class="wave-box">
+              <div class="result-label">Original</div>
+              <div class="waveform-before" id="pitch-wf-before"></div>
+            </div>
+            <div class="wave-box">
+              <div class="result-label">Shifted — <span id="pitch-result-note">+0 semitones</span></div>
+              <div class="waveform-after" id="pitch-wf-after"></div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="result-btn result-btn-primary" onclick="downloadResult('pitch')">↓ Download MP3</button>
+          <button class="result-btn result-btn-outline" onclick="downloadResult('wav')">↓ Download WAV</button>
+          <button class="result-btn result-btn-outline" onclick="openInStudio()">Open in Studio →</button>
+          <button class="result-btn result-btn-outline" onclick="resetResult('pitch')">Try again</button>
+        </div>
+      </div>
+
+      <button class="action-btn action-btn-blue" id="pitch-btn" onclick="runTransform('pitch')">
+        🎵 Shift Pitch
+      </button>
+    </div>
+  </div>
+
+  <!-- ── REMIX PANEL ── -->
+  <div class="transform-panel" id="remix-panel">
+    <div class="panel-header">
+      <div class="panel-header-icon icon-purple">🔀</div>
+      <div class="panel-header-text">
+        <h3>AI Remix</h3>
+        <p>Stem separation + style transfer — like a real remix, fully automatic</p>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div style="margin-bottom: 20px;">
+        <div class="result-label" style="margin-bottom:10px;">Choose new style</div>
+        <div class="style-grid" id="style-grid"></div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Remix intensity
+          <small>How different from original</small>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" class="es-slider" min="0" max="100" value="70"
+            style="accent-color:var(--purple)"
+            oninput="document.getElementById('remix-int-val').textContent=this.value+'%'">
+        </div>
+        <div class="slider-val" id="remix-int-val" style="color:var(--purple2)">70%</div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Keep original vocals
+          <small>Preserve the voice layer</small>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')" style="flex-shrink:0"></button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div class="result-label" style="margin-bottom:10px;">Stems to remix</div>
+        <div class="stem-grid" id="stem-grid"></div>
+      </div>
+
+      <div id="remix-process" class="process-area">
+        <div class="process-steps" id="remix-steps"></div>
+        <div class="progress-track"><div class="progress-fill fill-purple" id="remix-progress"></div></div>
+      </div>
+
+      <div id="remix-result" class="result-area">
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-badge badge-green">✓ Remix complete</span>
+          </div>
+          <div class="compare-waves">
+            <div class="wave-box">
+              <div class="result-label">Original</div>
+              <div class="waveform-before" id="remix-wf-before"></div>
+            </div>
+            <div class="wave-box">
+              <div class="result-label">Remixed — <span id="remix-result-style">Lo-Fi</span></div>
+              <div class="waveform-after" id="remix-wf-after"></div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="result-btn result-btn-primary" onclick="downloadResult('remix-mp3')">↓ Download Remix</button>
+          <button class="result-btn result-btn-outline" onclick="downloadResult('stems')">↓ Download Stems</button>
+          <button class="result-btn result-btn-outline" onclick="openInStudio()">Open in Studio →</button>
+          <button class="result-btn result-btn-outline" onclick="resetResult('remix')">Try again</button>
+        </div>
+      </div>
+
+      <button class="action-btn action-btn-purple" id="remix-btn" onclick="runTransform('remix')">
+        🔀 Remix Track
+      </button>
+    </div>
+  </div>
+
+  <!-- ── RESTORE PANEL ── -->
+  <div class="transform-panel" id="restore-panel">
+    <div class="panel-header">
+      <div class="panel-header-icon icon-orange">✨</div>
+      <div class="panel-header-text">
+        <h3>Restore</h3>
+        <p>Turn any rough recording into a studio-quality track</p>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div style="margin-bottom: 20px;">
+        <div class="result-label" style="margin-bottom:10px;">What do you want to fix?</div>
+        <div class="restore-grid" id="restore-grid"></div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div class="result-label" style="margin-bottom: 10px;">Processing intensity</div>
+        <div class="intensity-row" id="intensity-row"></div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Target loudness
+          <small>LUFS for streaming</small>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" class="es-slider" min="-20" max="-8" value="-14" step="0.5"
+            style="accent-color:var(--orange)"
+            oninput="document.getElementById('lufs-val').textContent=this.value+' LUFS'">
+        </div>
+        <div class="slider-val" id="lufs-val" style="color:var(--orange2)">-14 LUFS</div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label">
+          Reference track style
+          <small>Match mastering to a genre</small>
+        </div>
+        <select class="snap-select" style="flex:1;padding:9px 12px;font-size:13px;">
+          <option>Auto detect</option>
+          <option>Pop / Radio</option>
+          <option>Hip-Hop / Trap</option>
+          <option>Electronic / Dance</option>
+          <option>Rock / Alternative</option>
+          <option>Acoustic / Folk</option>
+          <option>Classical</option>
+        </select>
+      </div>
+
+      <div id="restore-process" class="process-area">
+        <div class="process-steps" id="restore-steps"></div>
+        <div class="progress-track"><div class="progress-fill fill-orange" id="restore-progress"></div></div>
+      </div>
+
+      <div id="restore-result" class="result-area">
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-badge badge-green">✓ Restoration complete</span>
+          </div>
+          <div class="compare-waves">
+            <div class="wave-box">
+              <div class="result-label">Before — raw</div>
+              <div class="waveform-before" id="restore-wf-before"></div>
+            </div>
+            <div class="wave-box">
+              <div class="result-label">After — studio quality</div>
+              <div class="waveform-after" id="restore-wf-after"></div>
+            </div>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="result-btn result-btn-primary" onclick="downloadResult('restored-mp3')">↓ Download Restored</button>
+          <button class="result-btn result-btn-outline" onclick="downloadResult('restored-wav')">↓ Download WAV</button>
+          <button class="result-btn result-btn-outline" onclick="openInStudio()">Open in Studio →</button>
+          <button class="result-btn result-btn-outline" onclick="resetResult('restore')">Try again</button>
+        </div>
+      </div>
+
+      <button class="action-btn action-btn-orange" id="restore-btn" onclick="runTransform('restore')">
+        ✨ Restore Track
+      </button>
+    </div>
+  </div>
+
+</div><!-- workspace -->
+</div><!-- content -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const state = {
+  mode: 'pitch',
+  file: null,
+  semitones: 0,
+  selectedKey: null,
+  selectedStyle: null,
+  restoreOptions: new Set(['noise','vocals','master']),
+  intensity: 'balanced',
+};
+
+const KEYS = ['C Maj','G Maj','D Maj','A Maj','E Maj','B Maj','A min','E min','B min','F# min','C# min','G# min'];
+const STYLES = [
+  { id:'lofi', icon:'🌙', name:'Lo-Fi', desc:'Warm, dusty, chill' },
+  { id:'house', icon:'🎛️', name:'House', desc:'4-on-the-floor energy' },
+  { id:'trap', icon:'🔊', name:'Trap', desc:'Hard-hitting 808s' },
+  { id:'acoustic', icon:'🎸', name:'Acoustic', desc:'Stripped, natural' },
+  { id:'ambient', icon:'🌊', name:'Ambient', desc:'Atmospheric, spacious' },
+  { id:'pop', icon:'✨', name:'Pop', desc:'Radio-ready hooks' },
+];
+const STEMS = [
+  { id:'vocals', name:'Vocals', color:'#60a5fa' },
+  { id:'drums', name:'Drums', color:'#34d399' },
+  { id:'bass', name:'Bass', color:'#f472b6' },
+  { id:'melody', name:'Melody', color:'#818cf8' },
+];
+const RESTORE_OPTIONS = [
+  { id:'noise', icon:'🔇', name:'Noise removal', desc:'Remove background hiss, room noise, hum' },
+  { id:'vocals', icon:'🎤', name:'Vocal clarity', desc:'Enhance presence and intelligibility of the voice' },
+  { id:'balance', icon:'🎚️', name:'Mix balance', desc:'Balance levels between instruments and vocals' },
+  { id:'master', icon:'✦', name:'Auto-mastering', desc:'Apply professional mastering for streaming' },
+];
+const INTENSITIES = ['gentle', 'balanced', 'aggressive'];
+
+const PITCH_STEPS = [
+  { label:'Analyzing pitch content', sub:'Detecting notes and key signature' },
+  { label:'Separating harmonics', sub:'Isolating frequency layers' },
+  { label:'Shifting pitch', sub:'Phase vocoder processing' },
+  { label:'Reconstructing audio', sub:'Merging shifted layers' },
+  { label:'Final output render', sub:'Exporting at original quality' },
+];
+const REMIX_STEPS = [
+  { label:'Separating stems', sub:'Vocals, drums, bass, melody — AI splitting' },
+  { label:'Analyzing style target', sub:'Extracting sonic fingerprint' },
+  { label:'Rebuilding instruments', sub:'Style transfer on each stem' },
+  { label:'Syncing tempo & key', sub:'Aligning all layers to new style' },
+  { label:'Final mix & render', sub:'Balancing and bouncing output' },
+];
+const RESTORE_STEPS = [
+  { label:'Scanning audio quality', sub:'Detecting noise floor, clipping, artifacts' },
+  { label:'Noise suppression', sub:'DeepFilterNet processing' },
+  { label:'Vocal enhancement', sub:'Clarity boost, de-essing, presence' },
+  { label:'Dynamic processing', sub:'Compression and limiting' },
+  { label:'Mastering', sub:'EQ, stereo width, LUFS targeting' },
+];
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function init() {
+  buildKeyGrid();
+  buildStyleGrid();
+  buildStemGrid();
+  buildRestoreOptions();
+  buildIntensityRow();
+  selectMode('pitch');
+}
+
+function buildKeyGrid() {
+  const grid = document.getElementById('key-grid');
+  KEYS.forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'key-btn';
+    btn.textContent = k;
+    btn.onclick = () => { document.querySelectorAll('.key-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); state.selectedKey = k; };
+    grid.appendChild(btn);
+  });
+}
+
+function buildStyleGrid() {
+  const grid = document.getElementById('style-grid');
+  STYLES.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'style-card';
+    card.innerHTML = `<span class="style-icon">${s.icon}</span><div class="style-name">${s.name}</div><div class="style-desc">${s.desc}</div>`;
+    card.onclick = () => { document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('selected')); card.classList.add('selected'); state.selectedStyle = s.id; document.getElementById('remix-result-style').textContent = s.name; };
+    grid.appendChild(card);
+  });
+  // select first
+  grid.firstChild?.click();
+}
+
+function buildStemGrid() {
+  const grid = document.getElementById('stem-grid');
+  STEMS.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'stem-card';
+    const wf = makeStemWaveform(s.color);
+    card.innerHTML = `
+      <div class="stem-header">
+        <div class="stem-dot" style="background:${s.color}"></div>
+        <div class="stem-name">${s.name}</div>
+        <button class="stem-toggle" onclick="this.classList.toggle('off')"></button>
+      </div>
+    `;
+    card.appendChild(wf);
+    grid.appendChild(card);
+  });
+}
+
+function makeStemWaveform(color) {
+  const div = document.createElement('div');
+  div.className = 'stem-waveform';
+  for (let i=0; i<60; i++) {
+    const s = document.createElement('span');
+    s.style.height = Math.round(3 + Math.random()*16) + 'px';
+    s.style.background = color;
+    div.appendChild(s);
+  }
+  return div;
+}
+
+function buildRestoreOptions() {
+  const grid = document.getElementById('restore-grid');
+  RESTORE_OPTIONS.forEach(o => {
+    const card = document.createElement('div');
+    card.className = 'restore-option' + (state.restoreOptions.has(o.id) ? ' selected' : '');
+    card.innerHTML = `<h5><span>${o.icon}</span>${o.name}</h5><p>${o.desc}</p>`;
+    card.onclick = () => {
+      if (state.restoreOptions.has(o.id)) { state.restoreOptions.delete(o.id); card.classList.remove('selected'); }
+      else { state.restoreOptions.add(o.id); card.classList.add('selected'); }
+    };
+    grid.appendChild(card);
+  });
+}
+
+function buildIntensityRow() {
+  const row = document.getElementById('intensity-row');
+  INTENSITIES.forEach(i => {
+    const btn = document.createElement('button');
+    btn.className = 'intensity-btn' + (i === state.intensity ? ' selected-int' : '');
+    btn.textContent = i.charAt(0).toUpperCase() + i.slice(1);
+    btn.onclick = () => {
+      document.querySelectorAll('.intensity-btn').forEach(b=>b.classList.remove('selected-int'));
+      btn.classList.add('selected-int');
+      state.intensity = i;
+    };
+    row.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// MODE
+// ═══════════════════════════════════════════════
+function selectMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active-mode'));
+  document.querySelector(`.mode-${mode}`).classList.add('active-mode');
+  ['pitch','remix','restore'].forEach(m => {
+    const panel = document.getElementById(`${m}-panel`);
+    panel.classList.toggle('visible', m === mode && !!state.file);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════════
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('audio/')) loadFile(file);
+  else toast('Please upload an audio file');
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleFile(e) { const f = e.target.files[0]; if (f) loadFile(f); }
+
+function loadFile(file) {
+  state.file = file;
+  document.getElementById('upload-zone').style.display = 'none';
+  const loaded = document.getElementById('file-loaded');
+  loaded.classList.add('visible');
+  document.getElementById('file-name').textContent = file.name;
+
+  toast('🔍 Analyzing track...');
+  setTimeout(() => {
+    const keys = ['A Minor','C Major','D Minor','G Major','E Minor','F Major'];
+    const genres = ['Pop','Electronic','Hip-Hop','House','Ambient','Indie'];
+    const bpm = 88 + Math.round(Math.random()*72);
+    const dur = `${2+Math.floor(Math.random()*2)}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}`;
+    document.getElementById('chip-key').textContent = keys[Math.floor(Math.random()*keys.length)];
+    document.getElementById('chip-bpm').textContent = bpm;
+    document.getElementById('chip-dur').textContent = dur;
+    document.getElementById('chip-genre').textContent = genres[Math.floor(Math.random()*genres.length)];
+    document.getElementById('chip-quality').textContent = file.name.endsWith('.wav') ? '24bit / 48kHz' : '320 kbps';
+    document.getElementById('file-meta').textContent = `${(file.size/1024/1024).toFixed(1)} MB · Audio file`;
+    buildWaveform('file-waveform', '#60a5fa', true);
+    toast('✓ Track analyzed');
+
+    // show active panel
+    document.getElementById(`${state.mode}-panel`).classList.add('visible');
+  }, 1200);
+}
+
+function removeFile() {
+  state.file = null;
+  document.getElementById('upload-zone').style.display = '';
+  document.getElementById('file-loaded').classList.remove('visible');
+  ['pitch','remix','restore'].forEach(m => {
+    document.getElementById(`${m}-panel`).classList.remove('visible');
+    resetResult(m);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// WAVEFORMS
+// ═══════════════════════════════════════════════
+function buildWaveform(id, color, random=false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i=0; i<120; i++) {
+    const s = document.createElement('span');
+    const h = random
+      ? 4 + Math.random()*28
+      : 8 + (Math.sin(i*0.25)*0.5+0.5)*24;
+    s.style.height = Math.round(h)+'px';
+    s.style.background = color;
+    el.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// SEMITONES
+// ═══════════════════════════════════════════════
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function changeSemi(delta) {
+  state.semitones = Math.max(-12, Math.min(12, state.semitones + delta));
+  document.getElementById('semi-value').textContent = (state.semitones > 0 ? '+' : '') + state.semitones;
+  const base = document.getElementById('chip-key').textContent || 'A Minor';
+  if (state.semitones === 0) {
+    document.getElementById('semi-note').textContent = 'Original key';
+  } else {
+    document.getElementById('semi-note').textContent =
+      (state.semitones > 0 ? '↑' : '↓') + ' ' + Math.abs(state.semitones) + ' semitone' + (Math.abs(state.semitones)>1?'s':'');
+  }
+  document.getElementById('pitch-result-note').textContent =
+    (state.semitones >= 0 ? '+' : '') + state.semitones + ' semitones';
+}
+
+// ═══════════════════════════════════════════════
+// TRANSFORM ENGINE
+// ═══════════════════════════════════════════════
+function runTransform(mode) {
+  if (!state.file) { toast('Please upload a track first'); return; }
+
+  const steps = mode==='pitch' ? PITCH_STEPS : mode==='remix' ? REMIX_STEPS : RESTORE_STEPS;
+  const processEl = document.getElementById(`${mode}-process`);
+  const stepsEl = document.getElementById(`${mode}-steps`);
+  const progressEl = document.getElementById(`${mode}-progress`);
+  const actionBtn = document.getElementById(`${mode}-btn`);
+
+  // Reset
+  resetResult(mode);
+  processEl.classList.add('visible');
+  stepsEl.innerHTML = '';
+  actionBtn.disabled = true;
+
+  // Build step elements
+  const stepEls = steps.map((step, i) => {
+    const el = document.createElement('div');
+    el.className = 'process-step';
+    el.innerHTML = `
+      <div class="step-indicator step-pending" id="step-ind-${mode}-${i}">${i+1}</div>
+      <div>
+        <div class="step-text">${step.label}</div>
+        <div class="step-subtext">${step.sub}</div>
+      </div>
+    `;
+    stepsEl.appendChild(el);
+    return el;
+  });
+
+  // Animate steps
+  let current = 0;
+  const totalMs = 4000;
+  const stepMs = totalMs / steps.length;
+
+  function nextStep() {
+    if (current > 0) {
+      const prev = document.getElementById(`step-ind-${mode}-${current-1}`);
+      if (prev) { prev.className = 'step-indicator step-done'; prev.textContent = '✓'; }
+    }
+    if (current >= steps.length) {
+      progressEl.style.width = '100%';
+      setTimeout(() => showResult(mode), 400);
+      return;
+    }
+    const ind = document.getElementById(`step-ind-${mode}-${current}`);
+    if (ind) ind.className = 'step-indicator step-active';
+    progressEl.style.width = Math.round(((current+1)/steps.length)*100) + '%';
+    current++;
+    setTimeout(nextStep, stepMs + Math.random()*300);
+  }
+  nextStep();
+}
+
+function showResult(mode) {
+  document.getElementById(`${mode}-result`).classList.add('visible');
+  document.getElementById(`${mode}-btn`).disabled = false;
+
+  const colors = { pitch:'#60a5fa', remix:'#a78bfa', restore:'#fb923c' };
+  const c = colors[mode];
+  buildWaveform(`${mode}-wf-before`, '#4a6a96', true);
+  buildWaveform(`${mode}-wf-after`, c, false);
+  toast(`✓ ${mode.charAt(0).toUpperCase()+mode.slice(1)} complete!`);
+}
+
+function resetResult(mode) {
+  document.getElementById(`${mode}-result`)?.classList.remove('visible');
+  document.getElementById(`${mode}-process`)?.classList.remove('visible');
+  const btn = document.getElementById(`${mode}-btn`);
+  if (btn) btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════
+function downloadResult(type) {
+  toast(`⏳ Preparing ${type.toUpperCase()} download...`);
+  setTimeout(() => toast(`✓ Download started`), 1500);
+}
+
+function openInStudio() {
+  toast('Opening in Studio...');
+  setTimeout(() => window.location.href = 'studio.html', 800);
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function toast(msg, dur=2400) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ═══════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
