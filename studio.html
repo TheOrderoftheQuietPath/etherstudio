@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtherStudio — Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #03070f;
+    --bg2:      #060d1a;
+    --bg3:      #091526;
+    --surface:  #0c1d38;
+    --surface2: #0f2244;
+    --border:   #162d52;
+    --border2:  #1e3d6e;
+    --blue:     #3b82f6;
+    --blue2:    #60a5fa;
+    --blue3:    #93c5fd;
+    --red:      #ef4444;
+    --green:    #22c55e;
+    --text:     #e2eeff;
+    --muted:    #6b8ab5;
+    --muted2:   #4a6a96;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    height: 52px;
+    background: rgba(3,7,15,0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    flex-shrink: 0;
+    backdrop-filter: blur(20px);
+    z-index: 50;
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 8px;
+    text-decoration: none; margin-right: 8px;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-crystal {
+    width: 12px; height: 12px; background: white;
+    clip-path: polygon(50% 0%, 100% 38%, 80% 100%, 20% 100%, 0% 38%);
+    opacity: 0.9;
+  }
+  .logo-text { font-size: 15px; font-weight: 700; color: #fff; }
+  .logo-text span { color: var(--blue3); font-weight: 400; }
+
+  .nav-divider { width: 1px; height: 20px; background: var(--border); }
+
+  .mode-tabs { display: flex; gap: 2px; }
+  .mode-tab {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px;
+    font-weight: 500; color: var(--muted); cursor: pointer;
+    border: none; background: none; transition: all 0.15s;
+  }
+  .mode-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .mode-tab.active { color: var(--blue2); background: rgba(59,130,246,0.12); }
+
+  .nav-spacer { flex: 1; }
+
+  .nav-info {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .nav-pill {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 99px; border: 1px solid var(--border2);
+    color: var(--muted); background: var(--surface);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .nav-pill:hover { border-color: var(--blue); color: var(--text); }
+  .nav-pill.editable { cursor: text; }
+
+  .nav-btn {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px;
+    font-weight: 600; cursor: pointer; border: none;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .nav-btn-outline {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border2);
+  }
+  .nav-btn-outline:hover { color: var(--text); border-color: var(--blue); }
+  .nav-btn-primary {
+    background: var(--blue); color: #fff;
+    border: 1px solid var(--blue);
+  }
+  .nav-btn-primary:hover { background: #2563eb; }
+
+  /* ── MAIN LAYOUT ── */
+  .studio-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 280px;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .panel-left {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-section {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted2); margin-bottom: 10px;
+  }
+
+  .track-list { overflow-y: auto; flex: 1; padding: 10px; }
+
+  .track-item {
+    padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface);
+    margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+  }
+  .track-item:hover { border-color: var(--border2); }
+  .track-item.selected { border-color: var(--blue); background: var(--surface2); }
+
+  .track-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .track-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .track-name-input {
+    flex: 1; background: none; border: none; color: var(--text);
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; outline: none; padding: 0;
+  }
+  .track-name-input:focus { cursor: text; }
+
+  .track-controls { display: flex; gap: 4px; }
+  .track-btn {
+    width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 10px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: inherit; font-weight: 700;
+  }
+  .track-btn:hover { border-color: var(--border2); color: var(--text); }
+  .track-btn.muted { border-color: #7f1d1d; color: #fca5a5; background: rgba(239,68,68,0.1); }
+  .track-btn.solo { border-color: #78350f; color: #fcd34d; background: rgba(234,179,8,0.1); }
+
+  .track-vol-row { display: flex; align-items: center; gap: 8px; }
+  .track-vol { flex: 1; accent-color: var(--blue); cursor: pointer; height: 3px; }
+  .track-vol-val { font-size: 10px; color: var(--muted2); min-width: 26px; text-align: right; }
+
+  .track-meter {
+    height: 3px; border-radius: 99px;
+    background: var(--border); overflow: hidden; margin-top: 6px;
+  }
+  .track-meter-fill {
+    height: 100%; width: 0%; border-radius: inherit;
+    background: linear-gradient(90deg, var(--green), #eab308 70%, var(--red));
+    transition: width 80ms linear;
+  }
+
+  .add-track-btn {
+    width: 100%; padding: 9px; border-radius: 8px;
+    border: 1px dashed var(--border2); background: transparent;
+    color: var(--muted); font-size: 12px; font-family: inherit;
+    cursor: pointer; transition: all 0.15s; font-weight: 500;
+  }
+  .add-track-btn:hover { border-color: var(--blue); color: var(--blue2); }
+
+  /* ── CENTER ── */
+  .panel-center {
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* toolbar */
+  .toolbar {
+    height: 40px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); display: flex; align-items: center;
+    padding: 0 12px; gap: 6px; flex-shrink: 0;
+  }
+
+  .tool-chip {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;
+    color: var(--muted); border: 1px solid transparent;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .tool-chip:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .tool-chip.active { color: var(--blue2); background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.2); }
+
+  .tool-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+  .snap-select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; font-family: inherit;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer; outline: none;
+  }
+
+  /* timeline */
+  .timeline-area {
+    flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column;
+  }
+
+  .tl-header-row {
+    height: 28px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); display: flex; flex-shrink: 0;
+  }
+  .tl-track-gutter { width: 0; flex-shrink: 0; }
+  .tl-ruler {
+    flex: 1; display: flex; align-items: center;
+    padding: 0 8px; position: relative; overflow: hidden;
+  }
+  .ruler-mark {
+    position: absolute; font-size: 10px; color: var(--muted2);
+    transform: translateX(-50%);
+  }
+
+  .tl-body {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    position: relative;
+  }
+
+  .tl-row {
+    height: 52px; display: flex; border-bottom: 1px solid rgba(22,45,82,0.5);
+    position: relative;
+  }
+  .tl-row:hover { background: rgba(255,255,255,0.01); }
+
+  .tl-lane {
+    flex: 1; position: relative; overflow: hidden;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent calc(25% - 1px),
+      rgba(22,45,82,0.4) calc(25% - 1px),
+      rgba(22,45,82,0.4) 25%
+    );
+  }
+
+  .tl-clip {
+    position: absolute; top: 6px; bottom: 6px;
+    border-radius: 6px; cursor: grab; user-select: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    overflow: hidden; min-width: 20px;
+    transition: box-shadow 0.15s;
+  }
+  .tl-clip:hover { box-shadow: 0 0 0 1px rgba(255,255,255,0.3); }
+  .tl-clip.dragging { cursor: grabbing; opacity: 0.85; z-index: 10; }
+
+  .clip-inner {
+    position: absolute; inset: 0;
+    display: flex; align-items: center;
+    padding: 0 6px; overflow: hidden;
+  }
+  .clip-name {
+    font-size: 10px; font-weight: 600;
+    color: rgba(255,255,255,0.8); white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 1;
+  }
+  .clip-waveform {
+    position: absolute; inset: 0;
+    display: flex; align-items: center;
+    gap: 1px; padding: 4px 6px; opacity: 0.35;
+  }
+  .clip-waveform span {
+    display: block; width: 2px;
+    background: white; border-radius: 1px; flex-shrink: 0;
+  }
+  .clip-resize-handle {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 6px; cursor: ew-resize; z-index: 2;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
+  }
+
+  /* playhead */
+  .playhead {
+    position: absolute; top: 0; bottom: 0;
+    width: 1.5px; background: var(--blue2);
+    z-index: 20; pointer-events: none;
+  }
+  .playhead::before {
+    content: '';
+    position: absolute; top: 0; left: -4px;
+    width: 10px; height: 10px;
+    background: var(--blue2); border-radius: 50%;
+  }
+
+  /* ── TRANSPORT BAR ── */
+  .transport {
+    height: 58px; border-top: 1px solid var(--border);
+    background: rgba(3,7,15,0.97); display: flex;
+    align-items: center; padding: 0 16px; gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .ctrl-group { display: flex; align-items: center; gap: 6px; }
+
+  .ctrl-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { border-color: var(--blue); background: var(--surface2); }
+  .ctrl-btn.play-btn {
+    width: 40px; height: 40px;
+    background: var(--blue); border-color: var(--blue); font-size: 15px;
+  }
+  .ctrl-btn.play-btn:hover { background: #2563eb; }
+  .ctrl-btn.rec-btn { color: var(--red); border-color: rgba(239,68,68,0.4); }
+  .ctrl-btn.rec-btn.recording {
+    background: var(--red); color: white; border-color: var(--red);
+    animation: recpulse 1s infinite;
+  }
+  @keyframes recpulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  }
+
+  .time-display {
+    font-size: 14px; font-weight: 700; color: var(--blue2);
+    font-variant-numeric: tabular-nums; min-width: 72px;
+    letter-spacing: 0.02em;
+  }
+
+  .transport-sep { width: 1px; height: 24px; background: var(--border); }
+
+  .progress-bar {
+    flex: 1; height: 5px; background: var(--surface);
+    border-radius: 99px; cursor: pointer; position: relative;
+    border: 1px solid var(--border);
+  }
+  .progress-fill {
+    height: 100%; border-radius: inherit;
+    background: linear-gradient(90deg, #1d4ed8, var(--blue));
+    pointer-events: none; transition: width 0.1s linear;
+  }
+
+  .transport-meta {
+    font-size: 11px; color: var(--muted2);
+    display: flex; flex-direction: column; gap: 2px; min-width: 80px;
+  }
+
+  .export-btn {
+    padding: 8px 18px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--border2);
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.15s;
+  }
+  .export-btn:hover { border-color: var(--blue); color: var(--blue2); }
+
+  /* ── RIGHT PANEL ── */
+  .panel-right {
+    background: var(--bg2); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .right-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .right-tab {
+    flex: 1; padding: 10px 6px; font-size: 11px; font-weight: 600;
+    color: var(--muted); cursor: pointer; text-align: center;
+    border: none; background: none; border-bottom: 2px solid transparent;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .right-tab:hover { color: var(--text); }
+  .right-tab.active { color: var(--blue2); border-bottom-color: var(--blue2); }
+
+  .right-content { flex: 1; overflow-y: auto; padding: 14px; display: none; }
+  .right-content.active { display: block; }
+
+  /* AI panel */
+  .ai-quick-btns { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .ai-quick-btn {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 12px;
+    font-family: inherit; cursor: pointer; text-align: left;
+    transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+  }
+  .ai-quick-btn:hover { border-color: var(--blue); background: var(--surface2); }
+  .ai-quick-btn .ai-icon { font-size: 14px; }
+
+  .ai-input-area { margin-bottom: 8px; }
+  .ai-textarea {
+    width: 100%; padding: 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg3);
+    color: var(--text); font-size: 12px; font-family: inherit;
+    resize: none; outline: none; line-height: 1.6;
+  }
+  .ai-textarea:focus { border-color: var(--blue); }
+
+  .ai-send-btn {
+    width: 100%; padding: 9px; border-radius: 8px;
+    border: none; background: var(--blue); color: white;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all 0.15s; margin-bottom: 12px;
+  }
+  .ai-send-btn:hover { background: #2563eb; }
+
+  .ai-response {
+    padding: 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg3);
+    color: var(--muted); font-size: 12px; line-height: 1.7;
+    min-height: 80px;
+  }
+
+  /* Sing panel */
+  .sing-record-btn {
+    width: 100%; padding: 16px; border-radius: 12px;
+    border: 1px solid rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.08); color: #fca5a5;
+    font-size: 14px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .sing-record-btn:hover { background: rgba(239,68,68,0.15); border-color: var(--red); }
+  .sing-record-btn.recording {
+    background: var(--red); color: white; border-color: var(--red);
+    animation: recpulse 1s infinite;
+  }
+
+  .mic-canvas {
+    width: 100%; height: 52px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    margin-bottom: 12px; display: block;
+  }
+
+  .pitch-control { margin-bottom: 14px; }
+  .pitch-label {
+    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+    display: flex; justify-content: space-between;
+  }
+  .pitch-slider { width: 100%; accent-color: var(--blue); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .toggle-label { font-size: 12px; color: var(--text); }
+  .toggle-sub { font-size: 11px; color: var(--muted); }
+  .toggle {
+    width: 36px; height: 20px; border-radius: 99px;
+    background: var(--border); border: none; cursor: pointer;
+    position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--blue); }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: white; top: 3px; left: 3px;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* Instruments panel */
+  .instr-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+  }
+  .instr-card {
+    padding: 14px 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface);
+    text-align: center; cursor: pointer; transition: all 0.15s;
+  }
+  .instr-card:hover { border-color: var(--blue); background: var(--surface2); }
+  .instr-card.active { border-color: var(--blue); background: rgba(59,130,246,0.12); }
+  .instr-card .ic-icon { font-size: 22px; margin-bottom: 6px; display: block; }
+  .instr-card .ic-name { font-size: 11px; font-weight: 600; color: var(--text); }
+
+  /* mini keyboard */
+  .mini-keyboard {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px; margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .keyboard-label { font-size: 10px; color: var(--muted2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .keys-row { display: flex; gap: 2px; position: relative; height: 60px; }
+  .key-white {
+    flex: 1; background: #e8eef8; border-radius: 0 0 5px 5px;
+    border: 1px solid #bcc8de; cursor: pointer;
+    transition: background 0.08s; position: relative;
+  }
+  .key-white:hover { background: #c8d8f0; }
+  .key-white.pressed { background: var(--blue2); }
+  .key-black {
+    position: absolute; width: 58%; height: 62%;
+    background: #0a1428; border-radius: 0 0 4px 4px;
+    border: 1px solid #000; cursor: pointer; z-index: 2;
+    transition: background 0.08s;
+  }
+  .key-black:hover { background: #1a2d4e; }
+  .key-black.pressed { background: var(--blue); }
+
+  /* ── MODALS / OVERLAYS ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 20px; padding: 32px; width: 400px; max-width: 90vw;
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1; padding: 11px; border-radius: 10px; font-size: 13px;
+    font-weight: 600; font-family: inherit; cursor: pointer; border: none;
+    transition: all 0.15s;
+  }
+  .modal-btn-outline {
+    background: transparent; border: 1px solid var(--border2); color: var(--muted);
+  }
+  .modal-btn-outline:hover { border-color: var(--blue); color: var(--text); }
+  .modal-btn-primary { background: var(--blue); color: #fff; }
+  .modal-btn-primary:hover { background: #2563eb; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); font-size: 13px; font-weight: 500;
+    padding: 10px 20px; border-radius: 99px; z-index: 300;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+  @media (max-width: 900px) {
+    .studio-layout { grid-template-columns: 0 1fr 0; }
+    .panel-left, .panel-right { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="logo-icon"><div class="logo-crystal"></div></div>
+    <div class="logo-text">Ether<span>Studio</span></div>
+  </a>
+  <div class="nav-divider"></div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('sing')">🎤 Sing</button>
+    <button class="mode-tab" onclick="setMode('play')">🎹 Play</button>
+    <button class="mode-tab" onclick="setMode('generate')">✦ Generate</button>
+    <button class="mode-tab" onclick="window.location='transform.html'">🔄 Transform</button>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-info">
+    <div class="nav-pill editable" id="nav-title" contenteditable="true" title="Click to rename">My First Track</div>
+    <div class="nav-pill" id="nav-bpm" onclick="editBPM()">124 BPM</div>
+    <div class="nav-pill" id="nav-key">A Minor</div>
+  </div>
+  <button class="nav-btn nav-btn-outline" onclick="showExport()">Export</button>
+  <button class="nav-btn nav-btn-primary" onclick="saveProject()">Save</button>
+</div>
+
+<!-- MAIN -->
+<div class="studio-layout">
+
+  <!-- LEFT: TRACKS -->
+  <div class="panel-left">
+    <div class="panel-section">
+      <div class="panel-label">Tracks</div>
+    </div>
+    <div class="track-list" id="track-list"></div>
+    <div style="padding: 10px;">
+      <button class="add-track-btn" onclick="addTrack()">+ Add track</button>
+    </div>
+  </div>
+
+  <!-- CENTER: TIMELINE -->
+  <div class="panel-center">
+    <div class="toolbar">
+      <span class="tool-chip active" onclick="setTool('arrange',this)">Arrange</span>
+      <span class="tool-chip" onclick="setTool('select',this)">Select</span>
+      <span class="tool-chip" onclick="setTool('cut',this)">Cut</span>
+      <div class="tool-sep"></div>
+      <select class="snap-select" id="snap-select" onchange="setSnap(this.value)">
+        <option value="0.25">Snap 1/4</option>
+        <option value="0.5">Snap 1/2</option>
+        <option value="1">Snap 1 bar</option>
+        <option value="0">No snap</option>
+      </select>
+      <div class="tool-sep"></div>
+      <span class="tool-chip" id="quantize-btn" onclick="quantizeAll()">Quantize</span>
+      <span class="tool-chip" onclick="zoomIn()">Zoom +</span>
+      <span class="tool-chip" onclick="zoomOut()">Zoom −</span>
+    </div>
+
+    <div class="timeline-area" id="timeline-area">
+      <div class="tl-header-row">
+        <div class="tl-ruler" id="tl-ruler" onclick="seekByRuler(event)"></div>
+      </div>
+      <div class="tl-body" id="tl-body">
+        <div class="playhead" id="playhead" style="left:0%"></div>
+        <div id="tl-rows"></div>
+      </div>
+    </div>
+
+    <!-- TRANSPORT -->
+    <div class="transport">
+      <div class="ctrl-group">
+        <button class="ctrl-btn" title="Restart" onclick="restart()">⏮</button>
+        <button class="ctrl-btn play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+        <button class="ctrl-btn" title="Stop" onclick="stop()">⏹</button>
+        <button class="ctrl-btn rec-btn" id="rec-btn" title="Record" onclick="toggleRecord()">⏺</button>
+      </div>
+      <div class="time-display" id="time-disp">0:00</div>
+      <div class="transport-sep"></div>
+      <div class="progress-bar" onclick="seekByBar(event)">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="transport-meta">
+        <span id="transport-bpm">124 BPM</span>
+        <span style="color:var(--muted2)">4/4 · 24bit · 48kHz</span>
+      </div>
+      <button class="export-btn" onclick="showExport()">↗ Export</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: PANELS -->
+  <div class="panel-right">
+    <div class="right-tabs">
+      <button class="right-tab active" onclick="switchTab('sing-panel',this)">Sing</button>
+      <button class="right-tab" onclick="switchTab('instr-panel',this)">Instruments</button>
+      <button class="right-tab" onclick="switchTab('ai-panel',this)">AI</button>
+    </div>
+
+    <!-- SING -->
+    <div class="right-content active" id="sing-panel">
+      <button class="sing-record-btn" id="sing-rec-btn" onclick="toggleSingRecord()">
+        <span>⏺</span> <span id="sing-rec-label">Start Recording</span>
+      </button>
+      <canvas class="mic-canvas" id="mic-canvas" height="52"></canvas>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Auto-pitch</div>
+          <div class="toggle-sub">Corrects every note individually</div>
+        </div>
+        <button class="toggle on" id="autopitch-toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+
+      <div class="pitch-control">
+        <div class="pitch-label">
+          <span>Pitch correction strength</span>
+          <span id="pitch-val">80%</span>
+        </div>
+        <input type="range" class="pitch-slider" min="0" max="100" value="80"
+          oninput="document.getElementById('pitch-val').textContent=this.value+'%'">
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Reverb</div>
+          <div class="toggle-sub">Add room ambience</div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Harmony layer</div>
+          <div class="toggle-sub">Add AI backing vocals</div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div class="panel-label">AI Voices</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="ai-quick-btn" onclick="selectAIVoice('female-warm')">
+            <span class="ai-icon">🎤</span> Female — Warm soprano
+          </button>
+          <button class="ai-quick-btn" onclick="selectAIVoice('male-deep')">
+            <span class="ai-icon">🎤</span> Male — Deep baritone
+          </button>
+          <button class="ai-quick-btn" onclick="selectAIVoice('choir')">
+            <span class="ai-icon">🎤</span> Choir — Full harmony
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSTRUMENTS -->
+    <div class="right-content" id="instr-panel">
+      <div class="panel-label">Choose instrument</div>
+      <div class="instr-grid">
+        <div class="instr-card active" onclick="selectInstr(this,'piano')">
+          <span class="ic-icon">🎹</span>
+          <div class="ic-name">Piano</div>
+        </div>
+        <div class="instr-card" onclick="selectInstr(this,'drums')">
+          <span class="ic-icon">🥁</span>
+          <div class="ic-name">Drums</div>
+        </div>
+        <div class="instr-card" onclick="selectInstr(this,'guitar')">
+          <span class="ic-icon">🎸</span>
+          <div class="ic-name">Guitar</div>
+        </div>
+        <div class="instr-card" onclick="selectInstr(this,'bass')">
+          <span class="ic-icon">🎸</span>
+          <div class="ic-name">Bass</div>
+        </div>
+        <div class="instr-card" onclick="selectInstr(this,'synth')">
+          <span class="ic-icon">🎛️</span>
+          <div class="ic-name">Synth</div>
+        </div>
+        <div class="instr-card" onclick="selectInstr(this,'strings')">
+          <span class="ic-icon">🎻</span>
+          <div class="ic-name">Strings</div>
+        </div>
+      </div>
+
+      <div class="mini-keyboard">
+        <div class="keyboard-label">Play keyboard (or use QWERTY)</div>
+        <div class="keys-row" id="piano-keys"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">MIDI input</div>
+          <div class="toggle-sub">Connect USB keyboard</div>
+        </div>
+        <button class="toggle" onclick="connectMIDI(this)"></button>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Smart chords</div>
+          <div class="toggle-sub">AI suggests chord progressions</div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div class="panel-label">Loop library</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button class="ai-quick-btn">🔁 Boom bap drums 95 BPM</button>
+          <button class="ai-quick-btn">🔁 Lo-fi piano loop A min</button>
+          <button class="ai-quick-btn">🔁 Deep house bass 124 BPM</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="right-content" id="ai-panel">
+      <div class="panel-label">Quick actions</div>
+      <div class="ai-quick-btns">
+        <button class="ai-quick-btn" onclick="runAI('Fix my vocals — correct pitch and timing')">
+          <span class="ai-icon">🎤</span> Fix my vocals
+        </button>
+        <button class="ai-quick-btn" onclick="runAI('Enhance the overall mix — balance EQ and dynamics')">
+          <span class="ai-icon">🎚️</span> Enhance mix
+        </button>
+        <button class="ai-quick-btn" onclick="runAI('Make the track sound bigger and fuller')">
+          <span class="ai-icon">🚀</span> Make it bigger
+        </button>
+        <button class="ai-quick-btn" onclick="runAI('Suggest what this track needs next')">
+          <span class="ai-icon">💡</span> What does this need?
+        </button>
+        <button class="ai-quick-btn" onclick="runAI('Master this track for streaming platforms')">
+          <span class="ai-icon">✦</span> Master for streaming
+        </button>
+      </div>
+      <div class="ai-input-area">
+        <textarea class="ai-textarea" id="ai-input" rows="3"
+          placeholder="Ask anything about your track..."></textarea>
+      </div>
+      <button class="ai-send-btn" onclick="sendAI()">Send →</button>
+      <div class="ai-response" id="ai-response">
+        Your AI co-producer is ready. Ask anything or use the quick actions above.
+      </div>
+    </div>
+  </div>
+
+</div><!-- studio-layout -->
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <h3>Export track</h3>
+    <p>Choose your export format. Your track will be mixed and mastered automatically before download.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;">
+        <input type="radio" name="format" value="mp3" checked style="accent-color:var(--blue)">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fff;">MP3 — 320kbps</div>
+          <div style="font-size:11px;color:var(--muted);">Best for streaming & sharing</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;">
+        <input type="radio" name="format" value="wav" style="accent-color:var(--blue)">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fff;">WAV — 24bit / 48kHz</div>
+          <div style="font-size:11px;color:var(--muted);">Studio quality, lossless</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-outline" onclick="closeModal('export-modal')">Cancel</button>
+      <button class="modal-btn modal-btn-primary" onclick="doExport()">Export & Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATE MODAL -->
+<div class="modal-overlay" id="generate-modal">
+  <div class="modal">
+    <h3>Generate track concept</h3>
+    <p>Describe your idea and AI will build a full concept with all layers ready in your timeline.</p>
+    <textarea class="ai-textarea" id="gen-prompt" rows="3"
+      placeholder="Dark melodic house with emotional vocals and a huge drop..."
+      style="margin-bottom:12px;"></textarea>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <select class="snap-select" style="flex:1;padding:8px;">
+        <option>Auto Genre</option><option>House</option><option>Pop</option>
+        <option>Hip-Hop</option><option>Ambient</option><option>Electronic</option>
+      </select>
+      <select class="snap-select" style="flex:1;padding:8px;">
+        <option>Auto Mood</option><option>Dark</option><option>Uplifting</option>
+        <option>Emotional</option><option>Aggressive</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-outline" onclick="closeModal('generate-modal')">Cancel</button>
+      <button class="modal-btn modal-btn-primary" onclick="doGenerate()">Generate →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const COLORS = ['#60a5fa','#818cf8','#34d399','#f472b6','#fb923c','#a78bfa','#22d3ee','#fbbf24'];
+
+const state = {
+  tracks: [
+    { id: 'vocals',     name: 'Vocals',     color: '#60a5fa', volume: 80, muted: false, solo: false, clips: [] },
+    { id: 'instrument', name: 'Instrument', color: '#818cf8', volume: 70, muted: false, solo: false,
+      clips: [{ id: uid(), name: 'Piano loop', start: 0, dur: 16, peaks: rndPeaks(80) }] },
+    { id: 'drums',      name: 'Drums',      color: '#34d399', volume: 75, muted: false, solo: false,
+      clips: [{ id: uid(), name: 'Drum pattern', start: 0, dur: 32, peaks: rndPeaks(80) }] },
+  ],
+  bpm: 124,
+  key: 'A Minor',
+  playing: false,
+  recording: false,
+  singRecording: false,
+  progress: 0,
+  totalBars: 32,
+  timer: null,
+  zoom: 1,
+  snap: 0.25,
+  mode: 'sing',
+  mediaRecorder: null,
+  micStream: null,
+  audioCtx: null,
+  analyser: null,
+  wfFrame: null,
+  chunks: [],
+  selectedTrack: null,
+  dragging: null,
+  resizing: null,
+  currentTool: 'arrange',
+  aiVoice: null,
+};
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function uid() { return Math.random().toString(36).slice(2,10); }
+function rndPeaks(n) { return Array.from({length:n}, () => 0.2 + Math.random() * 0.7); }
+function fmt(sec) { return `${Math.floor(sec/60)}:${String(Math.floor(sec%60)).padStart(2,'0')}`; }
+function clamp(v,a,b) { return Math.max(a, Math.min(b, v)); }
+
+function toast(msg, dur=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function render() {
+  renderTracks();
+  renderTimeline();
+  renderRuler();
+  updateTransport();
+}
+
+function renderTracks() {
+  const list = document.getElementById('track-list');
+  list.innerHTML = '';
+  state.tracks.forEach((track, idx) => {
+    const el = document.createElement('div');
+    el.className = 'track-item' + (state.selectedTrack === track.id ? ' selected' : '');
+    el.innerHTML = `
+      <div class="track-header">
+        <div class="track-dot" style="background:${track.color}"></div>
+        <input class="track-name-input" value="${track.name}"
+          onchange="renameTrack('${track.id}',this.value)"
+          onclick="selectTrack('${track.id}')">
+        <div class="track-controls">
+          <button class="track-btn${track.muted?' muted':''}" onclick="toggleMute('${track.id}')">M</button>
+          <button class="track-btn${track.solo?' solo':''}" onclick="toggleSolo('${track.id}')">S</button>
+        </div>
+      </div>
+      <div class="track-vol-row">
+        <input type="range" class="track-vol" min="0" max="100" value="${track.volume}"
+          oninput="setVolume('${track.id}',+this.value)">
+        <span class="track-vol-val">${track.volume}</span>
+      </div>
+      <div class="track-meter"><div class="track-meter-fill" id="meter-${track.id}"></div></div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function renderTimeline() {
+  const rows = document.getElementById('tl-rows');
+  rows.innerHTML = '';
+  const barW = (100 / state.totalBars) * state.zoom;
+
+  state.tracks.forEach(track => {
+    const row = document.createElement('div');
+    row.className = 'tl-row';
+    row.style.opacity = track.muted ? '0.4' : '1';
+
+    const lane = document.createElement('div');
+    lane.className = 'tl-lane';
+    lane.dataset.trackId = track.id;
+    lane.style.backgroundSize = `${barW * 4}% 100%`;
+
+    track.clips.forEach(clip => {
+      const left = (clip.start / state.totalBars) * 100 * state.zoom;
+      const width = (clip.dur / state.totalBars) * 100 * state.zoom;
+
+      const clipEl = document.createElement('div');
+      clipEl.className = 'tl-clip';
+      clipEl.dataset.clipId = clip.id;
+      clipEl.dataset.trackId = track.id;
+      clipEl.style.cssText = `left:${left}%;width:${width}%;background:${track.color}22;border-color:${track.color}66;`;
+
+      // waveform
+      const wf = document.createElement('div');
+      wf.className = 'clip-waveform';
+      (clip.peaks || []).forEach(h => {
+        const s = document.createElement('span');
+        s.style.height = Math.round(4 + h * 20) + 'px';
+        wf.appendChild(s);
+      });
+      clipEl.appendChild(wf);
+
+      // label
+      const lbl = document.createElement('div');
+      lbl.className = 'clip-inner';
+      lbl.innerHTML = `<span class="clip-name">${clip.name}</span>`;
+      clipEl.appendChild(lbl);
+
+      // resize handle
+      const rh = document.createElement('div');
+      rh.className = 'clip-resize-handle';
+      rh.addEventListener('mousedown', e => startResize(e, track.id, clip.id));
+      clipEl.appendChild(rh);
+
+      clipEl.addEventListener('mousedown', e => {
+        if (e.target.classList.contains('clip-resize-handle')) return;
+        startDrag(e, track.id, clip.id);
+      });
+
+      lane.appendChild(clipEl);
+    });
+
+    // click lane to place clip (in arrange mode)
+    lane.addEventListener('click', e => {
+      if (state.currentTool !== 'arrange') return;
+      if (e.target !== lane) return;
+      const rect = lane.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      const bar = snap(pct * state.totalBars / state.zoom);
+      addClip(track.id, bar);
+    });
+
+    row.appendChild(lane);
+    rows.appendChild(row);
+  });
+}
+
+function renderRuler() {
+  const ruler = document.getElementById('tl-ruler');
+  ruler.innerHTML = '';
+  const bars = Math.floor(state.totalBars * state.zoom);
+  const step = state.zoom >= 2 ? 1 : state.zoom >= 1 ? 2 : 4;
+  for (let i = 0; i <= bars; i += step) {
+    const mark = document.createElement('div');
+    mark.className = 'ruler-mark';
+    mark.style.left = `${(i / bars) * 100}%`;
+    mark.textContent = `${i+1}`;
+    ruler.appendChild(mark);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// TRANSPORT
+// ═══════════════════════════════════════════════
+function updateTransport() {
+  const pct = (state.progress / state.totalBars) * 100;
+  document.getElementById('progress-fill').style.width = clamp(pct,0,100) + '%';
+  document.getElementById('playhead').style.left = clamp(pct * state.zoom, 0, 100) + '%';
+  const sec = (state.progress / state.bpm) * 60 * 4;
+  document.getElementById('time-disp').textContent = fmt(sec);
+  updateMeters();
+}
+
+function updateMeters() {
+  state.tracks.forEach(t => {
+    const m = document.getElementById(`meter-${t.id}`);
+    if (!m) return;
+    if (!state.playing || t.muted) { m.style.width = '0%'; return; }
+    const v = clamp(t.volume - 15 + Math.random() * 28, 5, 98);
+    m.style.width = Math.round(v) + '%';
+  });
+}
+
+function togglePlay() {
+  state.playing = !state.playing;
+  document.getElementById('play-btn').textContent = state.playing ? '⏸' : '▶';
+  if (state.playing) {
+    state.timer = setInterval(() => {
+      state.progress += 0.05;
+      if (state.progress >= state.totalBars) {
+        state.progress = 0;
+        state.playing = false;
+        document.getElementById('play-btn').textContent = '▶';
+        clearInterval(state.timer);
+      }
+      updateTransport();
+    }, (60000 / state.bpm / 4) * 0.05);
+  } else {
+    clearInterval(state.timer);
+    updateMeters();
+  }
+}
+
+function stop() {
+  state.playing = false;
+  clearInterval(state.timer);
+  document.getElementById('play-btn').textContent = '▶';
+  updateTransport();
+}
+
+function restart() {
+  stop();
+  state.progress = 0;
+  updateTransport();
+}
+
+function seekByBar(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  state.progress = pct * state.totalBars;
+  updateTransport();
+}
+
+function seekByRuler(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  state.progress = (pct / state.zoom) * state.totalBars;
+  updateTransport();
+}
+
+function toggleRecord() {
+  state.recording = !state.recording;
+  const btn = document.getElementById('rec-btn');
+  btn.classList.toggle('recording', state.recording);
+  if (state.recording && !state.playing) togglePlay();
+  toast(state.recording ? '⏺ Recording...' : '⏹ Recording stopped');
+}
+
+// ═══════════════════════════════════════════════
+// SING / MIC
+// ═══════════════════════════════════════════════
+async function toggleSingRecord() {
+  if (!state.singRecording) {
+    await startMic();
+  } else {
+    stopMic();
+  }
+}
+
+async function startMic() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    state.micStream = stream;
+    state.singRecording = true;
+
+    const btn = document.getElementById('sing-rec-btn');
+    btn.classList.add('recording');
+    document.getElementById('sing-rec-label').textContent = 'Recording... (click to stop)';
+
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    state.analyser = state.audioCtx.createAnalyser();
+    state.analyser.fftSize = 256;
+    const source = state.audioCtx.createMediaStreamSource(stream);
+    source.connect(state.analyser);
+    drawMicWaveform();
+
+    state.chunks = [];
+    state.mediaRecorder = new MediaRecorder(stream);
+    state.mediaRecorder.ondataavailable = e => state.chunks.push(e.data);
+    state.mediaRecorder.onstop = () => saveMicRecording();
+    state.mediaRecorder.start();
+
+    if (!state.playing) togglePlay();
+    toast('🎤 Mic active — sing!');
+  } catch (err) {
+    toast('Microphone access denied');
+  }
+}
+
+function stopMic() {
+  if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+    state.mediaRecorder.stop();
+  }
+  if (state.micStream) {
+    state.micStream.getTracks().forEach(t => t.stop());
+  }
+  if (state.wfFrame) cancelAnimationFrame(state.wfFrame);
+  state.singRecording = false;
+
+  const btn = document.getElementById('sing-rec-btn');
+  btn.classList.remove('recording');
+  document.getElementById('sing-rec-label').textContent = 'Start Recording';
+
+  const canvas = document.getElementById('mic-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function saveMicRecording() {
+  const blob = new Blob(state.chunks, { type: 'audio/webm' });
+  const url = URL.createObjectURL(blob);
+  const peaks = rndPeaks(80);
+  const track = state.tracks.find(t => t.id === 'vocals');
+  if (track) {
+    track.clips.push({
+      id: uid(), name: 'Vocal take', start: state.progress > 2 ? state.progress - 2 : 0,
+      dur: 8, peaks, audioUrl: url
+    });
+    render();
+    toast('✓ Vocal take saved to timeline');
+  }
+}
+
+function drawMicWaveform() {
+  const canvas = document.getElementById('mic-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.offsetWidth;
+  const H = canvas.height;
+
+  function draw() {
+    state.wfFrame = requestAnimationFrame(draw);
+    if (!state.analyser) return;
+    const data = new Uint8Array(state.analyser.frequencyBinCount);
+    state.analyser.getByteTimeDomainData(data);
+
+    ctx.fillStyle = '#091526';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = (i / data.length) * W;
+      const y = (v / 128) * (H / 2);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  draw();
+}
+
+// ═══════════════════════════════════════════════
+// TRACKS
+// ═══════════════════════════════════════════════
+function addTrack() {
+  const idx = state.tracks.length;
+  state.tracks.push({
+    id: uid(), name: `Layer ${idx+1}`,
+    color: COLORS[idx % COLORS.length],
+    volume: 70, muted: false, solo: false, clips: []
+  });
+  render();
+}
+
+function selectTrack(id) { state.selectedTrack = id; renderTracks(); }
+function renameTrack(id, name) { const t = state.tracks.find(t=>t.id===id); if(t) t.name=name; renderTimeline(); }
+function toggleMute(id) { const t = state.tracks.find(t=>t.id===id); if(t) t.muted=!t.muted; render(); }
+function toggleSolo(id) { const t = state.tracks.find(t=>t.id===id); if(t) t.solo=!t.solo; renderTracks(); }
+function setVolume(id, v) { const t = state.tracks.find(t=>t.id===id); if(t) t.volume=v; }
+
+function addClip(trackId, startBar) {
+  const t = state.tracks.find(t=>t.id===trackId);
+  if (!t) return;
+  t.clips.push({ id: uid(), name: 'New clip', start: startBar, dur: 4, peaks: rndPeaks(60) });
+  renderTimeline();
+  toast('Clip added');
+}
+
+// ═══════════════════════════════════════════════
+// DRAG & RESIZE
+// ═══════════════════════════════════════════════
+function snap(bars) {
+  if (state.snap === 0) return bars;
+  return Math.round(bars / state.snap) * state.snap;
+}
+
+function getLaneWidth(trackId) {
+  const lane = document.querySelector(`[data-track-id="${trackId}"]`);
+  return lane ? lane.getBoundingClientRect().width : 1;
+}
+
+function startDrag(e, trackId, clipId) {
+  e.preventDefault();
+  const track = state.tracks.find(t=>t.id===trackId);
+  const clip = track?.clips.find(c=>c.id===clipId);
+  if (!clip) return;
+  state.dragging = { trackId, clipId, startX: e.clientX, startBar: clip.start };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+  document.querySelector(`[data-clip-id="${clipId}"]`)?.classList.add('dragging');
+}
+
+function onDrag(e) {
+  if (!state.dragging) return;
+  const laneW = getLaneWidth(state.dragging.trackId);
+  const dx = e.clientX - state.dragging.startX;
+  const dBars = (dx / laneW) * state.totalBars / state.zoom;
+  const track = state.tracks.find(t=>t.id===state.dragging.trackId);
+  const clip = track?.clips.find(c=>c.id===state.dragging.clipId);
+  if (!clip) return;
+  clip.start = clamp(snap(state.dragging.startBar + dBars), 0, state.totalBars - clip.dur);
+  renderTimeline();
+}
+
+function stopDrag() {
+  state.dragging = null;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDrag);
+}
+
+function startResize(e, trackId, clipId) {
+  e.preventDefault(); e.stopPropagation();
+  const track = state.tracks.find(t=>t.id===trackId);
+  const clip = track?.clips.find(c=>c.id===clipId);
+  if (!clip) return;
+  state.resizing = { trackId, clipId, startX: e.clientX, startDur: clip.dur };
+  document.addEventListener('mousemove', onResize);
+  document.addEventListener('mouseup', stopResize);
+}
+
+function onResize(e) {
+  if (!state.resizing) return;
+  const laneW = getLaneWidth(state.resizing.trackId);
+  const dx = e.clientX - state.resizing.startX;
+  const dBars = (dx / laneW) * state.totalBars / state.zoom;
+  const track = state.tracks.find(t=>t.id===state.resizing.trackId);
+  const clip = track?.clips.find(c=>c.id===state.resizing.clipId);
+  if (!clip) return;
+  clip.dur = clamp(snap(state.resizing.startDur + dBars), 1, state.totalBars - clip.start);
+  renderTimeline();
+}
+
+function stopResize() {
+  state.resizing = null;
+  document.removeEventListener('mousemove', onResize);
+  document.removeEventListener('mouseup', stopResize);
+}
+
+// ═══════════════════════════════════════════════
+// TOOLS / ZOOM
+// ═══════════════════════════════════════════════
+function setTool(tool, el) {
+  state.currentTool = tool;
+  document.querySelectorAll('.tool-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setSnap(v) { state.snap = +v; }
+
+function zoomIn() { state.zoom = clamp(state.zoom * 1.4, 0.3, 6); render(); }
+function zoomOut() { state.zoom = clamp(state.zoom / 1.4, 0.3, 6); render(); }
+
+function quantizeAll() {
+  state.tracks.forEach(t => {
+    t.clips.forEach(c => { c.start = Math.round(c.start); });
+  });
+  renderTimeline();
+  toast('✓ All clips quantized to nearest bar');
+}
+
+// ═══════════════════════════════════════════════
+// MODE TABS
+// ═══════════════════════════════════════════════
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['sing','play','generate'][i] === mode);
+  });
+  if (mode === 'generate') {
+    document.getElementById('generate-modal').classList.add('open');
+  } else if (mode === 'sing') {
+    switchTab('sing-panel', document.querySelector('.right-tab'));
+  } else if (mode === 'play') {
+    const tabs = document.querySelectorAll('.right-tab');
+    switchTab('instr-panel', tabs[1]);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RIGHT PANEL TABS
+// ═══════════════════════════════════════════════
+function switchTab(panelId, btn) {
+  document.querySelectorAll('.right-content').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.right-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// AI ASSISTANT
+// ═══════════════════════════════════════════════
+const AI_RESPONSES = {
+  'fix my vocals': 'Vocal analysis complete. Detected pitch deviations on bars 3–5 and 11–12. Auto-pitch applied at 85% strength. Timing corrected within ±10ms. Consonants boosted with a gentle presence shelf at 5kHz.',
+  'enhance the overall mix': 'Mix enhanced. Applied gentle high-pass filters on all non-bass tracks, added light compression on the drum bus (3:1 ratio), and balanced the stereo width. Vocals are sitting better in the mix now.',
+  'make the track sound bigger': 'Applied harmonic excitement, subtle stereo widening on pads and synths, and added a parallel compression layer on the drum bus. The low-end has more punch and the high frequencies have more air.',
+  'suggest what this track needs': 'Based on the current arrangement, I\'d suggest: (1) add a counter-melody or lead synth, (2) the drop could use a bass swell leading into it, (3) consider a breakdown section around bar 16 with just drums and bass.',
+  'master this track': 'Mastering complete. Applied a multiband compressor (3 bands), a final limiter at -1dBFS, and LUFS targeting at -14 LUFS for streaming. The track is now ready for Spotify and Apple Music.',
+};
+
+function runAI(prompt) {
+  const response = document.getElementById('ai-response');
+  const tab = document.querySelectorAll('.right-tab')[2];
+  switchTab('ai-panel', tab);
+  response.textContent = 'Analyzing your track...';
+  setTimeout(() => {
+    const key = Object.keys(AI_RESPONSES).find(k => prompt.toLowerCase().includes(k));
+    response.textContent = key ? AI_RESPONSES[key] : `Processed: "${prompt}". Applied intelligent enhancements based on your track's current state. Check the timeline for updated clips.`;
+    toast('✓ AI action complete');
+  }, 900);
+}
+
+function sendAI() {
+  const input = document.getElementById('ai-input');
+  const prompt = input.value.trim();
+  if (!prompt) return;
+  runAI(prompt);
+  input.value = '';
+}
+
+// ═══════════════════════════════════════════════
+// INSTRUMENTS
+// ═══════════════════════════════════════════════
+function selectInstr(el, instr) {
+  document.querySelectorAll('.instr-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  toast(`${instr.charAt(0).toUpperCase()+instr.slice(1)} selected`);
+}
+
+function selectAIVoice(voice) {
+  state.aiVoice = voice;
+  toast(`AI voice: ${voice} selected`);
+}
+
+// mini piano keyboard
+function buildKeyboard() {
+  const container = document.getElementById('piano-keys');
+  if (!container) return;
+  const notes = ['C','D','E','F','G','A','B'];
+  const blackPositions = [1,2,4,5,6]; // after these white keys
+  container.style.position = 'relative';
+
+  notes.forEach((note, i) => {
+    const key = document.createElement('div');
+    key.className = 'key-white';
+    key.title = note + '4';
+    key.addEventListener('mousedown', () => { key.classList.add('pressed'); toast(`♪ ${note}4`); });
+    key.addEventListener('mouseup', () => key.classList.remove('pressed'));
+    container.appendChild(key);
+  });
+
+  // black keys
+  const whites = container.querySelectorAll('.key-white');
+  blackPositions.forEach((pos, i) => {
+    const bk = document.createElement('div');
+    bk.className = 'key-black';
+    const whiteW = 100 / notes.length;
+    bk.style.left = `${(pos * whiteW) - (whiteW * 0.29)}%`;
+    bk.addEventListener('mousedown', e => { e.stopPropagation(); bk.classList.add('pressed'); });
+    bk.addEventListener('mouseup', () => bk.classList.remove('pressed'));
+    container.appendChild(bk);
+  });
+}
+
+// MIDI
+function connectMIDI(btn) {
+  btn.classList.toggle('on');
+  if (navigator.requestMIDIAccess) {
+    navigator.requestMIDIAccess().then(() => toast('🎹 MIDI connected')).catch(() => toast('MIDI not available'));
+  } else {
+    toast('MIDI not supported in this browser');
+  }
+}
+
+// QWERTY keyboard -> piano
+const QWERTY_MAP = { a:'C4',w:'C#4',s:'D4',e:'D#4',d:'E4',f:'F4',t:'F#4',g:'G4',y:'G#4',h:'A4',u:'A#4',j:'B4' };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  const note = QWERTY_MAP[e.key.toLowerCase()];
+  if (note && !e.repeat) toast(`♪ ${note}`);
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'r' || e.key === 'R') toggleRecord();
+});
+
+// ═══════════════════════════════════════════════
+// BPM EDIT
+// ═══════════════════════════════════════════════
+function editBPM() {
+  const current = state.bpm;
+  const val = prompt(`BPM (current: ${current})`, current);
+  if (val && !isNaN(+val) && +val > 20 && +val < 300) {
+    state.bpm = Math.round(+val);
+    document.getElementById('nav-bpm').textContent = state.bpm + ' BPM';
+    document.getElementById('transport-bpm').textContent = state.bpm + ' BPM';
+    toast(`BPM set to ${state.bpm}`);
+  }
+}
+
+function saveProject() { toast('✓ Project saved'); }
+
+// ═══════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════
+function showExport() { document.getElementById('export-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function doExport() {
+  const fmt = document.querySelector('input[name="format"]:checked')?.value || 'mp3';
+  closeModal('export-modal');
+  toast(`⏳ Exporting as ${fmt.toUpperCase()}...`);
+  setTimeout(() => toast(`✓ Export ready — ${fmt.toUpperCase()} downloaded`), 2000);
+}
+
+function doGenerate() {
+  const prompt = document.getElementById('gen-prompt').value.trim();
+  closeModal('generate-modal');
+  if (!prompt) return;
+  toast('✦ Generating track concept...');
+  setTimeout(() => {
+    // add AI generated clips to all tracks
+    state.tracks.forEach(track => {
+      track.clips.push({
+        id: uid(), name: 'AI — ' + track.name,
+        start: snap(state.progress), dur: 16, peaks: rndPeaks(80)
+      });
+    });
+    render();
+    toast('✓ Track concept added to timeline');
+  }, 1500);
+}
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+render();
+buildKeyboard();
+</script>
+</body>
+</html>
