@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtherStudio — Generate</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03070f;--bg2:#060d1a;--bg3:#091526;
+  --surface:#0c1d38;--surface2:#0f2244;
+  --border:#162d52;--border2:#1e3d6e;
+  --blue:#3b82f6;--blue2:#60a5fa;--blue3:#93c5fd;
+  --purple:#8b5cf6;--purple2:#a78bfa;
+  --green:#22c55e;--red:#ef4444;
+  --text:#e2eeff;--muted:#6b8ab5;--muted2:#4a6a96;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif}
+.wrap{min-height:100vh;display:flex;flex-direction:column}
+nav{height:54px;display:flex;align-items:center;padding:0 28px;gap:8px;background:rgba(3,7,15,.95);border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.gem{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);display:flex;align-items:center;justify-content:center}
+.gem-c{width:11px;height:11px;background:#fff;clip-path:polygon(50% 0%,100% 38%,80% 100%,20% 100%,0% 38%);opacity:.9}
+.logo-t{font-size:14px;font-weight:700;color:#fff}.logo-t span{color:var(--blue3);font-weight:400}
+.nl{padding:5px 12px;border-radius:7px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;border:none;background:none;font-family:inherit;cursor:pointer;transition:all .15s}
+.nl:hover{color:var(--text);background:rgba(255,255,255,.05)}.nl.on{color:var(--purple2);background:rgba(139,92,246,.1)}
+.ns{flex:1}
+.api-pill{display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid}
+.api-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(--green)}
+.api-bad{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:var(--red)}
+.api-wait{background:rgba(100,116,139,.08);border-color:rgba(100,116,139,.3);color:#94a3b8}
+.api-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.main{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden;height:calc(100vh - 54px)}
+
+/* CHAT */
+.chat{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.chat-head{padding:16px 22px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.chat-head h2{font-size:15px;font-weight:700;color:#fff;margin-bottom:2px}
+.chat-head p{font-size:11px;color:var(--muted)}
+.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;gap:9px;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{flex-direction:row-reverse}
+.av{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;font-weight:700}
+.av.ai{background:linear-gradient(135deg,#1d4ed8,var(--purple));color:#fff}
+.av.u{background:var(--surface2);border:1px solid var(--border2);font-size:12px}
+.bub{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.65;max-width:calc(100% - 44px)}
+.msg.ai .bub{background:var(--surface);border:1px solid var(--border);color:var(--text);border-top-left-radius:3px}
+.msg.u .bub{background:var(--blue);color:#fff;border-top-right-radius:3px}
+.bub b{color:var(--blue2)}
+.dots{display:flex;gap:4px;align-items:center}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:dt 1.4s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dt{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.1);opacity:1}}
+
+/* CONCEPT CARD */
+.c-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-top:8px}
+.c-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:7px}
+.c-pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.cpill{font-size:10px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted)}
+.c-layers{margin-bottom:10px}
+.c-layer{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:3px}
+.cdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.c-btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:6px 13px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.btn-blue{background:linear-gradient(135deg,#1d4ed8,var(--blue));color:#fff}.btn-blue:hover{opacity:.9}
+.btn-out{background:transparent;border:1px solid var(--border2);color:var(--muted)}.btn-out:hover{border-color:var(--blue);color:var(--text)}
+
+/* SUNO */
+.suno-card{background:linear-gradient(135deg,rgba(139,92,246,.07),rgba(59,130,246,.03));border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:13px;margin-top:8px}
+.suno-h{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.suno-lbl{font-size:13px;font-weight:700;color:var(--purple2)}
+.suno-badge{font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(139,92,246,.15);color:var(--purple2);border:1px solid rgba(139,92,246,.25)}
+.suno-body{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:11px;color:var(--text);line-height:1.6;font-family:inherit;margin-bottom:7px;white-space:pre-wrap;max-height:150px;overflow-y:auto}
+.copy-btn{padding:5px 11px;border-radius:6px;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid rgba(139,92,246,.3);background:rgba(139,92,246,.08);color:var(--purple2);transition:all .15s}
+.copy-btn:hover{background:rgba(139,92,246,.18)}
+
+/* LYRIC MODE */
+.lm-box{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-top:8px}
+.lm-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:3px}
+.lm-sub{font-size:11px;color:var(--muted);margin-bottom:11px;line-height:1.5}
+.lm-opts{display:flex;flex-direction:column;gap:6px}
+.lm-opt{padding:11px 13px;border-radius:9px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .18s;display:flex;align-items:flex-start;gap:10px}
+.lm-opt:hover{border-color:var(--border2)}.lm-opt.sel{border-color:var(--blue);background:rgba(59,130,246,.07)}
+.lm-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+.lm-h{font-size:12px;font-weight:600;color:#fff;margin-bottom:2px}
+.lm-p{font-size:10px;color:var(--muted);line-height:1.4}
+
+/* EDITABLE LYRICS */
+.el-box{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:13px;margin-top:8px}
+.el-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sec-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;border-radius:99px;margin-bottom:5px;margin-top:7px}
+.st-v{background:rgba(59,130,246,.12);color:var(--blue2);border:1px solid rgba(59,130,246,.25)}
+.st-c{background:rgba(139,92,246,.12);color:var(--purple2);border:1px solid rgba(139,92,246,.25)}
+.st-b{background:rgba(20,184,166,.12);color:#2dd4bf;border:1px solid rgba(20,184,166,.25)}
+.st-p{background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.25)}
+.st-o{background:rgba(107,114,128,.12);color:#9ca3af;border:1px solid rgba(107,114,128,.25)}
+.lyric-line{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.06);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;padding:5px 2px;outline:none;line-height:1.5;transition:border-color .15s}
+.lyric-line:focus{border-bottom-color:var(--blue2)}.lyric-line::placeholder{color:var(--muted2);opacity:.7}
+.el-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.el-btn{padding:5px 12px;border-radius:6px;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.el-blue{background:linear-gradient(135deg,#1d4ed8,var(--blue));color:#fff}.el-blue:hover{opacity:.9}
+.el-purple{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:var(--purple2)}.el-purple:hover{background:rgba(139,92,246,.22)}
+.el-out{background:transparent;border:1px solid var(--border2);color:var(--muted)}.el-out:hover{border-color:var(--blue);color:var(--text)}
+
+/* INPUT */
+.chat-foot{padding:11px 20px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.qps{display:flex;gap:4px;margin-bottom:7px;flex-wrap:wrap}
+.qp{padding:3px 9px;border-radius:99px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.qp:hover{border-color:var(--blue);color:var(--text)}
+.inp-row{display:flex;gap:7px;align-items:flex-end}
+.ta{flex:1;padding:9px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.5;max-height:100px;transition:border-color .2s}
+.ta:focus{border-color:var(--blue)}.ta::placeholder{color:var(--muted2)}
+.send{width:34px;height:34px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .15s}
+.send:hover{background:#2563eb}.send:disabled{opacity:.4;cursor:not-allowed}
+
+/* RIGHT PANEL */
+.right{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+.right-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.right-head h3{font-size:12px;font-weight:700;color:#fff;margin-bottom:1px}
+.right-head p{font-size:10px;color:var(--muted)}
+.right-body{flex:1;overflow-y:auto;padding:11px}
+.rb-sec{margin-bottom:11px}
+.rb-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin-bottom:5px}
+.rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.rb-pill{padding:5px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);font-size:10px;font-weight:500;color:var(--muted);cursor:pointer;text-align:center;transition:all .15s;font-family:inherit}
+.rb-pill:hover{border-color:var(--border2);color:var(--text)}.rb-pill.on{border-color:var(--blue);color:var(--blue2);background:rgba(59,130,246,.09)}
+.bpm-row{display:flex;align-items:center;gap:7px}
+.bpm-lbl{font-size:10px;color:var(--muted);min-width:28px}
+.bpm-sl{flex:1;accent-color:var(--blue)}.bpm-val{font-size:10px;font-weight:700;color:var(--blue2);min-width:26px;text-align:right}
+.tp-list{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.tp{padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--surface)}
+.tp-top{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.tp-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.tp-name{font-size:10px;font-weight:600;color:var(--text);flex:1}
+.tp-type{font-size:8px;color:var(--muted2);padding:1px 5px;border-radius:99px;background:var(--bg3);border:1px solid var(--border)}
+.tp-wf{height:18px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;gap:1px;padding:2px;overflow:hidden}
+.tp-wf span{display:block;width:2px;border-radius:1px;flex-shrink:0}
+.go-btn{width:100%;padding:11px;border-radius:9px;border:none;background:linear-gradient(135deg,#1d4ed8,var(--purple));color:#fff;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:4px;box-shadow:0 5px 18px rgba(37,99,235,.22)}
+.go-btn:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(37,99,235,.32)}
+.go-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:11px;font-weight:500;padding:7px 16px;border-radius:99px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+@media(max-width:780px){.main{grid-template-columns:1fr}.right{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a href="index.html" class="logo"><div class="gem"><div class="gem-c"></div></div><div class="logo-t">Ether<span>Studio</span></div></a>
+  <a href="studio.html" class="nl">Studio</a>
+  <button class="nl on">Generate</button>
+  <a href="transform.html" class="nl">Transform</a>
+  <div class="ns"></div>
+  <div class="api-pill api-wait" id="api-pill"><div class="api-dot"></div><span id="api-txt">Connecting...</span></div>
+  <a href="studio.html" class="nl" style="border:1px solid var(--border2)">Back to Studio</a>
+</nav>
+
+<div class="main">
+  <div class="chat">
+    <div class="chat-head">
+      <h2>AI Co-Producer</h2>
+      <p>Describe your track and I will generate a full concept, lyrics and a Suno prompt.</p>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg ai">
+        <div class="av ai">ES</div>
+        <div class="bub">
+          Hey! Describe the track you want to make.<br><br>
+          Tell me a <b>genre</b>, a <b>vibe</b>, a <b>theme</b> or a <b>feeling</b>. I will build a full concept with lyrics and a Suno prompt you can paste directly into Suno.<br><br>
+          What are we making?
+        </div>
+      </div>
+    </div>
+    <div class="chat-foot">
+      <div class="qps">
+        <button class="qp" onclick="qp(this)">Dark melodic house, emotional, big drop</button>
+        <button class="qp" onclick="qp(this)">Pop ballad about losing someone you love</button>
+        <button class="qp" onclick="qp(this)">Aggressive trap, hard 808s, revenge theme</button>
+        <button class="qp" onclick="qp(this)">Chill lo-fi, late night, nostalgic</button>
+        <button class="qp" onclick="qp(this)">R&amp;B love song, smooth, summer night</button>
+      </div>
+      <div class="inp-row">
+        <textarea class="ta" id="inp" rows="1" placeholder="Describe your track..." onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+        <button class="send" id="send-btn" onclick="send()">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="right-head"><h3>Track concept</h3><p>Appears after generation</p></div>
+    <div class="right-body">
+      <div class="rb-sec"><div class="rb-lbl">Genre</div><div class="rb-grid" id="g-genre"></div></div>
+      <div class="rb-sec"><div class="rb-lbl">Mood</div><div class="rb-grid" id="g-mood"></div></div>
+      <div class="rb-sec">
+        <div class="rb-lbl">Tempo</div>
+        <div class="bpm-row"><div class="bpm-lbl">BPM</div><input type="range" class="bpm-sl" min="60" max="200" value="124" id="bpm-sl" oninput="document.getElementById('bpm-v').textContent=this.value"><div class="bpm-val" id="bpm-v">124</div></div>
+      </div>
+      <div class="rb-sec"><div class="rb-lbl">Key</div><div class="rb-grid" id="g-key"></div></div>
+      <div id="tracks-wrap" style="display:none">
+        <div class="rb-lbl" style="margin-bottom:6px">Layers</div>
+        <div class="tp-list" id="tp-list"></div>
+      </div>
+      <button class="go-btn" id="go-btn" disabled onclick="goStudio()">Open in Studio</button>
+    </div>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// PUT YOUR KEY HERE
+const KEY = 'YOUR_API_KEY_HERE';
+
+const G = { msgs:[], concept:null, busy:false, suno:'', mode:null, userInput:'' };
+
+// SETUP
+const GENRES=['House','Pop','Hip-Hop','Trap','Ambient','Electronic','R&B','Lo-Fi','Indie','Rock','Jazz','Latin','Afrobeats','Reggaeton','Drum&Bass'];
+const MOODS=['Dark','Uplifting','Emotional','Aggressive','Dreamy','Nostalgic','Energetic','Melancholic','Romantic','Euphoric','Mysterious','Raw'];
+const KEYS=['C Major','G Major','D Major','A Major','A Minor','E Minor','D Minor','B Minor','F Major','Bb Major','C# Minor','F# Minor'];
+
+function mkPills(gridId, items){
+  const g=document.getElementById(gridId);
+  items.forEach(v=>{
+    const b=document.createElement('button');b.className='rb-pill';b.textContent=v;
+    b.onclick=()=>{g.querySelectorAll('.rb-pill').forEach(x=>x.classList.remove('on'));b.classList.add('on')};
+    g.appendChild(b);
+  });
+}
+mkPills('g-genre',GENRES);mkPills('g-mood',MOODS);mkPills('g-key',KEYS);
+
+function hi(gid,val){
+  if(!val)return;
+  document.getElementById(gid)?.querySelectorAll('.rb-pill').forEach(b=>{
+    b.classList.toggle('on',b.textContent.toLowerCase().includes(val.toLowerCase()));
+  });
+}
+
+// API CHECK
+async function checkAPI(){
+  const pill=document.getElementById('api-pill');
+  const txt=document.getElementById('api-txt');
+  if(!KEY||KEY==='YOUR_API_KEY_HERE'){pill.className='api-pill api-bad';txt.textContent='No API key';return}
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'hi'}]})
+    });
+    if(r.ok||r.status===400||r.status===529){pill.className='api-pill api-ok';txt.textContent='AI connected'}
+    else{pill.className='api-pill api-bad';txt.textContent='Key error '+r.status}
+  }catch(e){
+    pill.className='api-pill api-ok';txt.textContent='AI ready';
+  }
+}
+checkAPI();
+
+// CHAT
+function toast(m,d=2400){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._);t._=setTimeout(()=>t.classList.remove('show'),d)}
+function scrollDown(){const el=document.getElementById('msgs');el.scrollTop=el.scrollHeight}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px'}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
+function qp(btn){document.getElementById('inp').value=btn.textContent;send()}
+
+function addMsg(role,html,isHTML=true){
+  const w=document.createElement('div');w.className='msg '+role;
+  const av=document.createElement('div');av.className='av '+role;av.textContent=role==='ai'?'ES':'You';
+  const b=document.createElement('div');b.className='bub';
+  if(isHTML)b.innerHTML=html;else b.textContent=html;
+  w.append(av,b);document.getElementById('msgs').appendChild(w);scrollDown();return b;
+}
+function showTyping(){const w=document.createElement('div');w.className='msg ai';w.id='typing';const av=document.createElement('div');av.className='av ai';av.textContent='ES';const b=document.createElement('div');b.className='bub';b.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';w.append(av,b);document.getElementById('msgs').appendChild(w);scrollDown()}
+function hideTyping(){document.getElementById('typing')?.remove()}
+
+async function send(){
+  const inp=document.getElementById('inp');
+  const text=inp.value.trim();if(!text||G.busy)return;
+  G.userInput=text;
+  inp.value='';inp.style.height='auto';
+  addMsg('u',text,false);
+  G.msgs.push({role:'user',content:text});
+  G.busy=true;document.getElementById('send-btn').disabled=true;
+  showTyping();
+  try{
+    const reply=await callAI();
+    hideTyping();
+    G.msgs.push({role:'assistant',content:reply});
+    handleReply(reply);
+  }catch(err){
+    hideTyping();
+    addMsg('ai','<span style="color:var(--red)">Error: '+err.message+'</span><br><span style="font-size:11px;color:var(--muted)">Check your API key in generate.html line 1.</span>');
+  }
+  G.busy=false;document.getElementById('send-btn').disabled=false;
+}
+
+async function callAI(sysOverride){
+  if(!KEY||KEY==='YOUR_API_KEY_HERE')throw new Error('No API key — add your key to generate.html');
+  const system=sysOverride||SYSTEM;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3500,system,messages:G.msgs})
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||'HTTP '+r.status)}
+  return(await r.json()).content[0].text;
+}
+
+// SYSTEM PROMPT
+const SYSTEM=`You are an expert AI music co-producer for EtherStudio.
+
+When a user describes a track, respond with EXACTLY this structure — no exceptions:
+
+First line: One enthusiastic sentence about the concept (plain text, NO JSON here).
+
+Then on a new line, output ONLY valid JSON between CONCEPT_START and CONCEPT_END markers:
+
+CONCEPT_START
+{"title":"Track Title","bpm":124,"key":"A Minor","genre":"House","mood":"Dark","direction":"Creative direction here.","layers":[{"name":"Lead Vocals","type":"Vocals","color":"#60a5fa"},{"name":"Sub Bass","type":"Bass","color":"#818cf8"},{"name":"Drum Kit","type":"Drums","color":"#34d399"},{"name":"Atmosphere","type":"Pad","color":"#a78bfa"},{"name":"Lead Synth","type":"Lead","color":"#f472b6"}],"lyrics":{"verse1":["Line 1","Line 2","Line 3","Line 4"],"prechorus":["Line 1","Line 2"],"chorus":["Line 1 HOOK","Line 2","Line 3","Line 4"],"verse2":["Line 1","Line 2","Line 3","Line 4"],"bridge":["Line 1","Line 2","Line 3"],"outro":["Line 1","Line 2"]}}
+CONCEPT_END
+
+Then on a new line output the Suno prompt between SUNO_START and SUNO_END:
+
+SUNO_START
+[Genre]: genre here
+[Mood]: mood here
+[Tempo]: 124 BPM, 4/4
+[Key]: A Minor
+[Instruments]: list instruments
+[Vocals]: vocal style
+[Structure]: Intro > Verse > Pre-Chorus > Chorus > Bridge > Outro
+[Production]: production notes
+[References]: Artist 1, Artist 2
+[Tags]: tag1, tag2, tag3
+SUNO_END
+
+CRITICAL RULES:
+- Lyrics MUST be specific to the user request and theme — write original emotional lyrics
+- BPM must match genre (house 122-128, trap 130-145, ballad 65-80, lofi 75-95)
+- JSON must be valid — no trailing commas
+- Every lyrics section must have content`;
+
+// PARSE RESPONSE
+function handleReply(text){
+  let intro='';
+  let conceptJSON=null;
+  let sunoText='';
+
+  // Extract intro (first line before CONCEPT_START)
+  const cStart=text.indexOf('CONCEPT_START');
+  if(cStart>0)intro=text.slice(0,cStart).trim();
+
+  // Extract concept JSON
+  const cMatch=text.match(/CONCEPT_START\s*([\s\S]*?)\s*CONCEPT_END/);
+  if(cMatch){
+    try{
+      conceptJSON=JSON.parse(cMatch[1].trim());
+      G.concept=conceptJSON;
+    }catch(e){
+      console.error('JSON parse error:',e);
+      console.log('Raw JSON:',cMatch[1]);
+      // Try to fix common JSON issues
+      try{
+        const fixed=cMatch[1].trim().replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+        conceptJSON=JSON.parse(fixed);
+        G.concept=conceptJSON;
+      }catch(e2){
+        console.error('Could not fix JSON:',e2);
+      }
+    }
+  }
+
+  // Extract suno
+  const sMatch=text.match(/SUNO_START\s*([\s\S]*?)\s*SUNO_END/);
+  if(sMatch)G.suno=sMatch[1].trim();
+
+  // Build HTML
+  let html=intro?`<p>${esc(intro)}</p>`:'';
+
+  if(G.concept){
+    renderRightPanel(G.concept);
+    document.getElementById('go-btn').disabled=false;
+    html+=buildConceptCard(G.concept);
+  }else{
+    // Fallback: show raw text if parsing failed
+    html+=`<p>${esc(text.slice(0,200))}...</p><p style="color:var(--red);font-size:11px">Could not parse concept. Try again.</p>`;
+  }
+
+  if(G.suno)html+=buildSunoCard(G.suno);
+
+  // Always show lyric mode if we have lyrics
+  if(G.concept?.lyrics)html+=buildLyricMode();
+
+  addMsg('ai',html);
+}
+
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+function buildConceptCard(c){
+  const layers=(c.layers||[]).map(l=>`<div class="c-layer"><div class="cdot" style="background:${l.color}"></div>${esc(l.name)} &mdash; <em style="color:var(--muted2)">${esc(l.type)}</em></div>`).join('');
+  return `<div class="c-card">
+    <div class="c-title">&#10022; ${esc(c.title||'Untitled')}</div>
+    <div class="c-pills">
+      <span class="cpill">&#127926; ${c.bpm} BPM</span>
+      <span class="cpill">&#127929; ${esc(c.key)}</span>
+      <span class="cpill">&#127925; ${esc(c.genre)}</span>
+      <span class="cpill">&#128167; ${esc(c.mood)}</span>
+    </div>
+    <div class="c-layers">${layers}</div>
+    <div class="c-btns">
+      <button class="btn btn-blue" onclick="goStudio()">Open in Studio</button>
+      <button class="btn btn-out" onclick="refine()">Refine</button>
+    </div>
+  </div>`;
+}
+
+function buildSunoCard(txt){
+  const safe=esc(txt);
+  return `<div class="suno-card">
+    <div class="suno-h"><span style="font-size:15px">&#127925;</span><span class="suno-lbl">Suno Prompt</span><span class="suno-badge">Paste into Suno</span></div>
+    <div class="suno-body">${safe}</div>
+    <button class="copy-btn" onclick="copySuno(this)">&#128203; Copy Suno Prompt</button>
+  </div>`;
+}
+
+function copySuno(btn){
+  navigator.clipboard.writeText(G.suno).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy Suno Prompt',2000);toast('Suno prompt copied!')}).catch(()=>toast('Select text above and copy manually'));
+}
+
+function buildLyricMode(){
+  return `<div class="lm-box">
+    <div class="lm-title">&#127908; How do you want to work with the lyrics?</div>
+    <div class="lm-sub">Choose your preferred way to handle the lyrics for this track.</div>
+    <div class="lm-opts">
+      <div class="lm-opt" onclick="pickMode('show',this)">
+        <div class="lm-ico">&#10022;</div>
+        <div><div class="lm-h">AI wrote them &mdash; show me and let me edit</div><div class="lm-p">See the generated lyrics and edit any line directly.</div></div>
+      </div>
+      <div class="lm-opt" onclick="pickMode('self',this)">
+        <div class="lm-ico">&#9997;&#65039;</div>
+        <div><div class="lm-h">I want to write my own lyrics</div><div class="lm-p">Open the Studio with the concept and write from scratch.</div></div>
+      </div>
+      <div class="lm-opt" onclick="pickMode('collab',this)">
+        <div class="lm-ico">&#129309;</div>
+        <div><div class="lm-h">Collaborate &mdash; AI starts, I finish</div><div class="lm-p">AI writes the first half per section, you complete the rest.</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pickMode(mode,el){
+  document.querySelectorAll('.lm-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  G.mode=mode;
+  if(mode==='show')showLyrics('full');
+  else if(mode==='self')addMsg('ai','Your concept is ready. Click <b>Open in Studio</b> to write your own lyrics there with the AI assistant on the side.');
+  else showLyrics('half');
+}
+
+function showLyrics(mode){
+  if(!G.concept?.lyrics)return;
+  const SLBLS={verse1:'Verse 1',prechorus:'Pre-Chorus',chorus:'Chorus',verse2:'Verse 2',bridge:'Bridge',outro:'Outro'};
+  const SCL={verse1:'st-v',prechorus:'st-p',chorus:'st-c',verse2:'st-v',bridge:'st-b',outro:'st-o'};
+  let html=`<div class="el-box"><div class="el-title">${mode==='full'?'All lyrics are editable below':'AI wrote the first half — you finish the rest'}</div>`;
+  Object.entries(G.concept.lyrics).forEach(([sec,lines])=>{
+    if(!lines?.length)return;
+    const half=Math.ceil(lines.length/2);
+    html+=`<div class="sec-tag ${SCL[sec]||'st-v'}">${SLBLS[sec]||sec}</div>`;
+    lines.forEach((line,li)=>{
+      const isAI=mode==='full'||li<half;
+      const val=isAI?line:'';
+      const ph=!isAI?(SLBLS[sec]||sec)+' line '+(li+1)+'...':'Write a line...';
+      html+=`<input class="lyric-line" value="${val.replace(/"/g,'&quot;')}" placeholder="${ph}" oninput="upd('${sec}',${li},this.value)">`;
+    });
+  });
+  html+=`<div class="el-btns">
+    <button class="el-btn el-blue" onclick="goStudio()">Open in Studio with these lyrics</button>
+    <button class="el-btn el-purple" onclick="rewrite()">&#10022; Rewrite all lyrics</button>
+    ${mode==='half'?'<button class="el-btn el-out" onclick="fillRest()">AI fills the rest</button>':''}
+  </div></div>`;
+  addMsg('ai',html);
+  toast(mode==='full'?'Click any line to edit it':'Fill in the empty lines or let AI complete them');
+}
+
+function upd(sec,li,val){if(G.concept?.lyrics?.[sec])G.concept.lyrics[sec][li]=val}
+
+async function rewrite(){
+  G.msgs.push({role:'user',content:'Rewrite all the lyrics with fresh content. Same structure but completely new words. Keep the theme from my original request: '+G.userInput});
+  showTyping();
+  try{
+    const r=await callAI();hideTyping();
+    G.msgs.push({role:'assistant',content:r});
+    const m=r.match(/CONCEPT_START\s*([\s\S]*?)\s*CONCEPT_END/);
+    if(m){try{const c=JSON.parse(m[1].trim());if(c.lyrics){G.concept.lyrics=c.lyrics;showLyrics('full');toast('Fresh lyrics written!');return}}catch(e){}}
+    // Fallback
+    addMsg('ai','Here are fresh lyrics! Generate again for a full rewrite.',false);
+  }catch(e){hideTyping();addMsg('ai','Error: '+e.message,false)}
+}
+
+async function fillRest(){
+  const empty=[];
+  Object.entries(G.concept?.lyrics||{}).forEach(([sec,lines])=>{
+    const half=Math.ceil(lines.length/2);
+    lines.slice(half).forEach((_,i)=>empty.push({sec,li:i+half}));
+  });
+  if(!empty.length){toast('All lines filled!');return}
+  showTyping();
+  try{
+    const sys=`Complete exactly ${empty.length} empty song lyric lines. Output ONLY the lines, one per line. No numbers, no quotes, no explanation. Make them specific to this theme: ${G.userInput}. Genre: ${G.concept?.genre}. Mood: ${G.concept?.mood}.`;
+    const tmpMsgs=[{role:'user',content:'Complete these empty lyric lines now.'}];
+    const saved=G.msgs;G.msgs=tmpMsgs;
+    const r=await callAI(sys);G.msgs=saved;
+    hideTyping();
+    const lines=r.trim().split('\n').filter(l=>l.trim());
+    empty.forEach(({sec,li},i)=>{if(lines[i]&&G.concept?.lyrics?.[sec])G.concept.lyrics[sec][li]=lines[i].trim()});
+    showLyrics('half');toast('AI completed the missing lines!');
+  }catch(e){hideTyping();addMsg('ai','Error: '+e.message,false)}
+}
+
+// RIGHT PANEL
+function renderRightPanel(c){
+  document.getElementById('bpm-sl').value=c.bpm||124;
+  document.getElementById('bpm-v').textContent=c.bpm||124;
+  hi('g-genre',c.genre);hi('g-mood',c.mood);hi('g-key',c.key);
+  const tl=document.getElementById('tp-list');tl.innerHTML='';
+  (c.layers||[]).forEach(l=>{
+    const card=document.createElement('div');card.className='tp';
+    card.innerHTML=`<div class="tp-top"><div class="tp-dot" style="background:${l.color}"></div><div class="tp-name">${esc(l.name)}</div><div class="tp-type">${esc(l.type)}</div></div><div class="tp-wf"></div>`;
+    const wf=card.querySelector('.tp-wf');
+    Array.from({length:40},()=>Math.random()).forEach(h=>{const s=document.createElement('span');s.style.height=Math.round(2+h*12)+'px';s.style.background=l.color;wf.appendChild(s)});
+    tl.appendChild(card);
+  });
+  document.getElementById('tracks-wrap').style.display='block';
+}
+
+function goStudio(){
+  if(!G.concept)return;
+  try{sessionStorage.setItem('etherstudio_concept',JSON.stringify({concept:G.concept,lyricMode:G.mode,bpm:+document.getElementById('bpm-sl').value,timestamp:Date.now()}))}catch(e){}
+  toast('Opening Studio...');
+  setTimeout(()=>window.location.href='studio.html',500);
+}
+
+function refine(){const inp=document.getElementById('inp');inp.value='Can you ';inp.focus();resize(inp)}
+</script>
+</body>
+</html>
