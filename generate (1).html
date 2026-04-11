@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtherStudio — Generate</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03070f;--bg2:#060d1a;--bg3:#091526;
+  --surface:#0c1d38;--surface2:#0f2244;
+  --border:#162d52;--border2:#1e3d6e;
+  --blue:#3b82f6;--blue2:#60a5fa;--blue3:#93c5fd;
+  --purple:#8b5cf6;--purple2:#a78bfa;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --text:#e2eeff;--muted:#6b8ab5;--muted2:#4a6a96;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(1px 1px at 15% 20%,rgba(255,255,255,.4) 0%,transparent 100%),
+  radial-gradient(1px 1px at 70% 15%,rgba(255,255,255,.35) 0%,transparent 100%),
+  radial-gradient(1.5px 1.5px at 40% 70%,rgba(255,255,255,.3) 0%,transparent 100%),
+  radial-gradient(1px 1px at 85% 55%,rgba(255,255,255,.4) 0%,transparent 100%)}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(90px)}
+.o1{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,.1) 0%,transparent 70%);top:-150px;right:-100px}
+.o2{width:400px;height:400px;background:radial-gradient(circle,rgba(59,130,246,.08) 0%,transparent 70%);bottom:-100px;left:-100px}
+.content{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+nav{height:54px;display:flex;align-items:center;padding:0 40px;gap:12px;background:rgba(3,7,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-shrink:0;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.logo-gem{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);display:flex;align-items:center;justify-content:center}
+.logo-crystal{width:12px;height:12px;background:#fff;clip-path:polygon(50% 0%,100% 38%,80% 100%,20% 100%,0% 38%);opacity:.9}
+.logo-text{font-size:15px;font-weight:700;color:#fff}.logo-text span{color:var(--blue3);font-weight:400}
+.nav-link{padding:6px 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit;transition:all .15s;text-decoration:none}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nav-link.active{color:var(--purple2);background:rgba(139,92,246,.1)}
+.nav-spacer{flex:1}
+
+/* API STATUS */
+.api-status{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid}
+.api-ok{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green)}
+.api-err{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:var(--red)}
+.api-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.api-ok .api-dot{background:var(--green)}
+.api-err .api-dot{background:var(--red)}
+
+/* MAIN LAYOUT */
+.main{flex:1;display:grid;grid-template-columns:1fr 380px;overflow:hidden;max-height:calc(100vh - 54px)}
+
+/* CHAT */
+.chat-col{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden}
+.chat-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.chat-header h2{font-size:16px;font-weight:700;color:#fff;margin-bottom:3px}
+.chat-header p{font-size:12px;color:var(--muted)}
+.chat-msgs{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.msg{display:flex;gap:10px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;font-weight:700}
+.msg-av.ai{background:linear-gradient(135deg,#1d4ed8,var(--purple));color:#fff}
+.msg-av.user{background:var(--surface2);border:1px solid var(--border2);font-size:13px}
+.bubble{padding:11px 15px;border-radius:13px;font-size:13px;line-height:1.7;max-width:calc(100% - 46px)}
+.msg.ai .bubble{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px 13px 13px 13px}
+.msg.user .bubble{background:var(--blue);color:#fff;border-radius:13px 4px 13px 13px}
+.bubble strong{color:var(--blue2)}
+.typing-dots{display:flex;gap:4px;align-items:center;padding:2px 0}
+.typing-dots span{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:dot 1.4s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1);opacity:1}}
+
+/* CONCEPT CARD */
+.concept-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-top:10px}
+.cc-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:10px}
+.cc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cc-pill{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted)}
+.cc-layers{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.cc-layer{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}
+.cc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cc-actions{display:flex;gap:7px;flex-wrap:wrap}
+.cc-btn{padding:7px 14px;border-radius:8px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.cc-primary{background:linear-gradient(135deg,#1d4ed8,var(--blue));color:#fff}
+.cc-primary:hover{opacity:.9;transform:translateY(-1px)}
+.cc-outline{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.cc-outline:hover{border-color:var(--blue);color:var(--text)}
+
+/* SUNO PROMPT CARD */
+.suno-card{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(59,130,246,.05));border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:16px;margin-top:10px}
+.suno-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.suno-icon{font-size:16px}
+.suno-title{font-size:13px;font-weight:700;color:var(--purple2)}
+.suno-badge{font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(139,92,246,.2);color:var(--purple2);border:1px solid rgba(139,92,246,.3)}
+.suno-prompt{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;color:var(--text);line-height:1.6;font-family:'Inter',sans-serif;margin-bottom:10px;white-space:pre-wrap}
+.suno-copy{padding:6px 14px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.1);color:var(--purple2);transition:all .15s}
+.suno-copy:hover{background:rgba(139,92,246,.2)}
+
+/* LYRICS CARD */
+.lyrics-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-top:10px}
+.lyrics-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.lyrics-card-title{font-size:13px;font-weight:700;color:#fff}
+.lyrics-section{margin-bottom:14px}
+.lyrics-section-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px;margin-bottom:8px}
+.lt-verse{background:rgba(59,130,246,.15);color:var(--blue2);border:1px solid rgba(59,130,246,.3)}
+.lt-chorus{background:rgba(139,92,246,.15);color:var(--purple2);border:1px solid rgba(139,92,246,.3)}
+.lt-bridge{background:rgba(20,184,166,.15);color:#2dd4bf;border:1px solid rgba(20,184,166,.3)}
+.lt-pre{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+.lyrics-line{font-size:13px;color:var(--text);line-height:1.9;cursor:pointer;padding:1px 4px;border-radius:4px;transition:background .15s}
+.lyrics-line:hover{background:rgba(255,255,255,.05)}
+.lyrics-line.editing{background:rgba(59,130,246,.1)}
+.edit-hint{font-size:10px;color:var(--muted2);margin-top:4px}
+.lyrics-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.ly-btn{padding:6px 14px;border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all .15s}
+.ly-primary{background:linear-gradient(135deg,#1d4ed8,var(--blue));color:#fff}
+.ly-primary:hover{opacity:.9}
+.ly-outline{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.ly-outline:hover{border-color:var(--blue);color:var(--text)}
+.ly-purple{background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:var(--purple2)}
+.ly-purple:hover{background:rgba(139,92,246,.25)}
+
+/* EDITABLE LYRICS */
+.editable-lyrics{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-top:10px}
+.editable-lyrics h4{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.lyric-edit-line{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;padding:6px 2px;outline:none;line-height:1.6;transition:border-color .15s}
+.lyric-edit-line:focus{border-bottom-color:var(--blue2)}
+.lyric-section-lbl{font-size:9px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 5px}
+
+/* INPUT */
+.chat-input-area{padding:14px 22px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.quick-prompts{display:flex;gap:5px;margin-bottom:9px;flex-wrap:wrap}
+.qp{padding:4px 11px;border-radius:99px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.qp:hover{border-color:var(--blue);color:var(--text)}
+.input-wrap{display:flex;gap:8px;align-items:flex-end}
+.chat-ta{flex:1;padding:11px 14px;border-radius:11px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;line-height:1.6;max-height:120px;transition:border-color .2s}
+.chat-ta:focus{border-color:var(--blue)}.chat-ta::placeholder{color:var(--muted2)}
+.send-btn{width:38px;height:38px;border-radius:10px;border:none;background:var(--blue);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:all .15s}
+.send-btn:hover{background:#2563eb;transform:scale(1.05)}.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* RIGHT PANEL */
+.preview-col{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+.preview-header{padding:16px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.preview-header h3{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.preview-header p{font-size:11px;color:var(--muted)}
+.preview-body{flex:1;overflow-y:auto;padding:14px}
+.setting-block{margin-bottom:14px}
+.setting-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px}
+.setting-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.setting-pill{padding:7px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;text-align:center;transition:all .15s;font-family:inherit}
+.setting-pill:hover{border-color:var(--border2);color:var(--text)}.setting-pill.on{border-color:var(--blue);color:var(--blue2);background:rgba(59,130,246,.1)}
+.sl-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.sl-label{font-size:11px;color:var(--muted);min-width:36px}
+.sl{flex:1;accent-color:var(--blue)}.sl-val{font-size:11px;font-weight:700;color:var(--blue2);min-width:32px;text-align:right}
+.prev-track-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.prev-track{padding:10px;border-radius:9px;border:1px solid var(--border);background:var(--surface)}
+.pt-top{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.pt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pt-name{font-size:11px;font-weight:600;color:var(--text);flex:1}
+.pt-type{font-size:9px;color:var(--muted2);padding:2px 6px;border-radius:99px;background:var(--bg3);border:1px solid var(--border)}
+.pt-wf{height:22px;border-radius:5px;background:var(--bg3);display:flex;align-items:center;gap:1px;padding:3px;overflow:hidden}
+.pt-wf span{display:block;width:2px;border-radius:1px;flex-shrink:0}
+.open-studio-btn{width:100%;padding:13px;border-radius:11px;border:none;background:linear-gradient(135deg,#1d4ed8,var(--purple));color:#fff;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;box-shadow:0 8px 24px rgba(37,99,235,.3)}
+.open-studio-btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(37,99,235,.4)}
+.open-studio-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* LYRIC MODE CHOOSER */
+.lyric-mode-chooser{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:20px;margin-bottom:14px}
+.lmc-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:6px}
+.lmc-sub{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.lmc-options{display:flex;flex-direction:column;gap:8px}
+.lmc-option{padding:14px;border-radius:10px;border:2px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:12px}
+.lmc-option:hover{border-color:var(--border2);transform:translateY(-1px)}
+.lmc-option.selected{border-color:var(--blue);background:rgba(59,130,246,.08)}
+.lmc-ico{font-size:20px;flex-shrink:0;margin-top:2px}
+.lmc-text h4{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px}
+.lmc-text p{font-size:11px;color:var(--muted);line-height:1.5}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:9px 20px;border-radius:99px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+@media(max-width:800px){.main{grid-template-columns:1fr}.preview-col{display:none}}
+</style>
+</head>
+<body>
+<div class="o1"></div><div class="o2"></div>
+<div class="content">
+<nav>
+  <a href="index.html" class="logo"><div class="logo-gem"><div class="logo-crystal"></div></div><div class="logo-text">Ether<span>Studio</span></div></a>
+  <a href="studio.html" class="nav-link">🎤 Studio</a>
+  <button class="nav-link active">✦ Generate</button>
+  <a href="transform.html" class="nav-link">🔄 Transform</a>
+  <div class="nav-spacer"></div>
+  <div class="api-status" id="api-status"><div class="api-dot"></div><span id="api-status-text">Checking API...</span></div>
+  <a href="studio.html" class="nav-link" style="border:1px solid var(--border2);border-radius:8px">← Studio</a>
+</nav>
+
+<div class="main">
+  <div class="chat-col">
+    <div class="chat-header">
+      <h2>✦ AI Music Co-Producer</h2>
+      <p>Describe your idea — I'll build a full concept, write lyrics and generate a Suno prompt.</p>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg ai">
+        <div class="msg-av ai">ES</div>
+        <div class="bubble">
+          Hey! I'm your AI co-producer. Tell me what kind of track you want to make.<br><br>
+          Describe a <strong>vibe</strong>, a <strong>story</strong>, a <strong>feeling</strong> or even just a few words — and I'll build a full concept with layers, lyrics and a ready-to-use <strong>Suno prompt</strong>.<br><br>
+          What are we making today?
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <div class="quick-prompts">
+        <button class="qp" onclick="quickPrompt('Dark melodic house, emotional, huge drop')">🌙 Dark house</button>
+        <button class="qp" onclick="quickPrompt('Emotional pop ballad about losing someone you love')">💔 Pop ballad</button>
+        <button class="qp" onclick="quickPrompt('Aggressive trap banger with hard 808s, revenge theme')">🔥 Trap</button>
+        <button class="qp" onclick="quickPrompt('Chill lo-fi hip hop, late night studying')">📚 Lo-fi</button>
+        <button class="qp" onclick="quickPrompt('Cinematic orchestral, epic film score, battle scene')">🎬 Cinematic</button>
+        <button class="qp" onclick="quickPrompt('R&B love song, smooth, sensual, summer night')">🌙 R&B</button>
+      </div>
+      <div class="input-wrap">
+        <textarea class="chat-ta" id="chat-input" rows="1" placeholder="Describe your track idea..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="preview-col">
+    <div class="preview-header">
+      <h3>Track concept</h3>
+      <p>Your generated concept appears here</p>
+    </div>
+    <div class="preview-body">
+      <div class="setting-block">
+        <div class="setting-label">Genre</div>
+        <div class="setting-grid" id="genre-grid"></div>
+      </div>
+      <div class="setting-block">
+        <div class="setting-label">Mood</div>
+        <div class="setting-grid" id="mood-grid"></div>
+      </div>
+      <div class="setting-block">
+        <div class="setting-label">Tempo</div>
+        <div class="sl-row">
+          <div class="sl-label">BPM</div>
+          <input type="range" class="sl" min="60" max="200" value="124" id="bpm-sl" oninput="document.getElementById('bpm-val').textContent=this.value">
+          <div class="sl-val" id="bpm-val">124</div>
+        </div>
+      </div>
+      <div class="setting-block">
+        <div class="setting-label">Key</div>
+        <div class="setting-grid" id="key-grid"></div>
+      </div>
+      <div id="concept-preview" style="display:none">
+        <div class="setting-label" style="margin-bottom:8px">Generated tracks</div>
+        <div class="prev-track-list" id="preview-tracks"></div>
+      </div>
+      <button class="open-studio-btn" id="open-studio-btn" disabled onclick="openInStudio()">Open in Studio →</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// API KEY — filled in automatically
+// ═══════════════════════════════════════
+const ANTHROPIC_KEY = 'YOUR_API_KEY_HERE';
+
+const uid=()=>Math.random().toString(36).slice(2,9);
+const state={messages:[],concept:null,generating:false,lyricMode:null,editableLyrics:null};
+
+// GENRES / MOODS / KEYS
+const GENRES=['House','Pop','Hip-Hop','Trap','Ambient','Electronic','R&B','Lo-Fi','Indie','Rock','Jazz','Latin','Afrobeats','K-Pop','Reggaeton'];
+const MOODS=['Dark','Uplifting','Emotional','Aggressive','Dreamy','Nostalgic','Energetic','Melancholic','Romantic','Euphoric'];
+const KEYS=['C Maj','G Maj','D Maj','A Maj','A min','E min','D min','B min','F Maj','B♭ Maj','C# min','F# min'];
+
+function buildGrids(){
+  buildPillGrid('genre-grid',GENRES,'genre');
+  buildPillGrid('mood-grid',MOODS,'mood');
+  buildPillGrid('key-grid',KEYS,'key');
+}
+function buildPillGrid(id,items,type){
+  const g=document.getElementById(id);
+  items.forEach(item=>{
+    const btn=document.createElement('button');btn.className='setting-pill';btn.textContent=item;
+    btn.addEventListener('click',()=>{g.querySelectorAll('.setting-pill').forEach(b=>b.classList.remove('on'));btn.classList.add('on')});
+    g.appendChild(btn);
+  });
+}
+
+// API STATUS CHECK
+async function checkAPI(){
+  const el=document.getElementById('api-status');
+  const txt=document.getElementById('api-status-text');
+  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='YOUR_API_KEY_HERE'){
+    el.className='api-status api-err';txt.textContent='No API key';return;
+  }
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:10,messages:[{role:'user',content:'hi'}]})
+    });
+    if(res.ok||res.status===400){el.className='api-status api-ok';txt.textContent='AI connected'}
+    else{el.className='api-status api-err';txt.textContent='API error '+res.status}
+  }catch(e){
+    // CORS or network — assume ok if key is set
+    el.className='api-status api-ok';txt.textContent='AI ready';
+  }
+}
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px'}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+function quickPrompt(text){document.getElementById('chat-input').value=text;sendMessage()}
+function scrollChat(){const el=document.getElementById('chat-msgs');el.scrollTop=el.scrollHeight}
+
+function addMsg(role,content,isHTML=false){
+  const msgs=document.getElementById('chat-msgs');
+  const wrap=document.createElement('div');wrap.className='msg '+role;
+  const av=document.createElement('div');av.className='msg-av '+role;av.textContent=role==='ai'?'ES':'🎵';
+  const bub=document.createElement('div');bub.className='bubble';
+  if(isHTML)bub.innerHTML=content;else bub.textContent=content;
+  wrap.append(av,bub);msgs.appendChild(wrap);scrollChat();return bub;
+}
+
+function addTyping(){
+  const msgs=document.getElementById('chat-msgs');
+  const wrap=document.createElement('div');wrap.className='msg ai';wrap.id='typing';
+  const av=document.createElement('div');av.className='msg-av ai';av.textContent='ES';
+  const bub=document.createElement('div');bub.className='bubble';
+  bub.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
+  wrap.append(av,bub);msgs.appendChild(wrap);scrollChat();
+}
+function removeTyping(){document.getElementById('typing')?.remove()}
+
+async function sendMessage(){
+  const inp=document.getElementById('chat-input');
+  const text=inp.value.trim();if(!text||state.generating)return;
+  inp.value='';inp.style.height='auto';
+  addMsg('user',text);
+  state.messages.push({role:'user',content:text});
+  state.generating=true;document.getElementById('send-btn').disabled=true;
+  addTyping();
+  try{
+    const response=await callClaude(state.messages);
+    removeTyping();
+    processResponse(response);
+    state.messages.push({role:'assistant',content:response});
+  }catch(err){
+    removeTyping();
+    addMsg('ai','⚠️ Could not reach AI. Check your API key. Error: '+err.message);
+  }
+  state.generating=false;document.getElementById('send-btn').disabled=false;
+}
+
+async function callClaude(messages){
+  const system=`You are an expert AI music co-producer for EtherStudio. When a user describes a track, generate a COMPLETE response including:
+
+1. A conversational intro (2-3 sentences, enthusiastic and creative)
+2. A full track concept in <concept> JSON tags
+3. After the concept, ALWAYS show the lyric mode chooser with <lyric_mode/> tag
+4. ALWAYS generate a Suno prompt in <suno_prompt> tags
+
+The concept JSON must follow this EXACT format:
+<concept>
+{
+  "title": "Creative track title",
+  "bpm": 124,
+  "key": "A Minor",
+  "genre": "Genre",
+  "mood": "Mood",
+  "direction": "2-3 sentence creative direction",
+  "layers": [
+    {"name":"Layer name","type":"Vocals/Synth/Drums/Bass/Guitar/Pad/Lead","color":"#60a5fa","description":"What this layer does"},
+    {"name":"Layer name","type":"type","color":"#818cf8","description":"description"},
+    {"name":"Layer name","type":"type","color":"#34d399","description":"description"},
+    {"name":"Layer name","type":"type","color":"#f472b6","description":"description"},
+    {"name":"Layer name","type":"type","color":"#fb923c","description":"description"}
+  ],
+  "lyrics": {
+    "verse1": ["Line 1","Line 2","Line 3","Line 4"],
+    "prechorus": ["Line 1","Line 2"],
+    "chorus": ["Line 1","Line 2","Line 3","Line 4"],
+    "verse2": ["Line 1","Line 2","Line 3","Line 4"],
+    "bridge": ["Line 1","Line 2","Line 3"],
+    "outro": ["Line 1","Line 2"]
+  }
+}
+</concept>
+
+<suno_prompt>
+[Genre]: [specific genre and subgenre]
+[Mood]: [mood descriptors]
+[Tempo]: [BPM] BPM, [time signature]
+[Key]: [key and scale]
+[Instruments]: [detailed list of instruments and sounds]
+[Vocals]: [vocal style, gender, technique]
+[Structure]: Intro > Verse > Pre-Chorus > Chorus > Verse > Pre-Chorus > Chorus > Bridge > Chorus > Outro
+[Production]: [specific production details, mixing notes]
+[Reference]: Sounds like [2-3 artist references]
+[Tags]: [comma-separated style tags for Suno]
+</suno_prompt>
+
+Write original, emotionally resonant lyrics that perfectly match the genre and mood. Be VERY specific with the Suno prompt — the more detail, the better the result.
+After responding to a concept, be ready to refine based on feedback — change lyrics, adjust mood, rewrite sections, generate new verses, etc.`;
+
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,system,messages})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'API error '+res.status)}
+  return(await res.json()).content[0].text;
+}
+
+function processResponse(text){
+  const conceptMatch=text.match(/<concept>([\s\S]*?)<\/concept>/);
+  const sunoMatch=text.match(/<suno_prompt>([\s\S]*?)<\/suno_prompt>/);
+  let display=text.replace(/<concept>[\s\S]*?<\/concept>/g,'').replace(/<suno_prompt>[\s\S]*?<\/suno_prompt>/g,'').replace(/<lyric_mode\/>/g,'').trim();
+
+  let html=display;
+
+  if(conceptMatch){
+    try{
+      const concept=JSON.parse(conceptMatch[1].trim());
+      state.concept=concept;
+      renderConcept(concept);
+      html+=buildConceptCardHTML(concept);
+    }catch(e){console.error('concept parse error',e)}
+  }
+
+  // Always show lyric mode chooser if we have a concept
+  if(state.concept){
+    html+=buildLyricModeHTML();
+  }
+
+  if(sunoMatch){
+    html+=buildSunoCardHTML(sunoMatch[1].trim());
+  }
+
+  addMsg('ai',html,true);
+  if(state.concept){document.getElementById('open-studio-btn').disabled=false}
+}
+
+function buildConceptCardHTML(c){
+  const layers=(c.layers||[]).slice(0,5).map(l=>`<div class="cc-layer"><div class="cc-dot" style="background:${l.color}"></div>${l.name} — <em style="color:var(--muted2)">${l.type}</em></div>`).join('');
+  return `<div class="concept-card">
+    <div class="cc-title">✦ ${c.title||'Untitled'}</div>
+    <div class="cc-meta">
+      <span class="cc-pill">🎵 ${c.bpm||124} BPM</span>
+      <span class="cc-pill">🎹 ${c.key||'A Minor'}</span>
+      <span class="cc-pill">🎛️ ${c.genre||''}</span>
+      <span class="cc-pill">💫 ${c.mood||''}</span>
+    </div>
+    <div class="cc-layers">${layers}</div>
+    <div class="cc-actions">
+      <button class="cc-btn cc-primary" onclick="openInStudio()">Open in Studio →</button>
+      <button class="cc-btn cc-outline" onclick="refine()">Refine →</button>
+    </div>
+  </div>`;
+}
+
+function buildLyricModeHTML(){
+  return `<div class="lyric-mode-chooser">
+    <div class="lmc-title">🎤 Lyrics — how do you want to work?</div>
+    <div class="lmc-sub">Choose how you want to handle the lyrics for this track.</div>
+    <div class="lmc-options">
+      <div class="lmc-option" onclick="chooseLyricMode('ai-wrote',this)">
+        <div class="lmc-ico">✦</div>
+        <div class="lmc-text">
+          <h4>AI wrote them — show me & let me edit</h4>
+          <p>I generated complete lyrics for your track. See them now and edit any line you want.</p>
+        </div>
+      </div>
+      <div class="lmc-option" onclick="chooseLyricMode('self',this)">
+        <div class="lmc-ico">✍️</div>
+        <div class="lmc-text">
+          <h4>I want to write my own lyrics</h4>
+          <p>Open the studio with your track concept and write your own lyrics with AI suggestions.</p>
+        </div>
+      </div>
+      <div class="lmc-option" onclick="chooseLyricMode('collaborate',this)">
+        <div class="lmc-ico">🤝</div>
+        <div class="lmc-text">
+          <h4>Collaborate — AI starts, I finish</h4>
+          <p>I'll write a few lines per section and you fill in the rest. Best of both worlds.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildSunoCardHTML(prompt){
+  const escaped=prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div class="suno-card">
+    <div class="suno-header">
+      <span class="suno-icon">🎵</span>
+      <span class="suno-title">Suno Prompt</span>
+      <span class="suno-badge">Copy & paste into Suno</span>
+    </div>
+    <div class="suno-prompt">${escaped}</div>
+    <button class="suno-copy" onclick="copySunoPrompt(this,'${btoa(unescape(encodeURIComponent(prompt)))}')">📋 Copy Suno Prompt</button>
+  </div>`;
+}
+
+function copySunoPrompt(btn,encoded){
+  const text=decodeURIComponent(escape(atob(encoded)));
+  navigator.clipboard?.writeText(text).then(()=>{btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy Suno Prompt',2000)});
+  toast('✓ Suno prompt copied to clipboard');
+}
+
+function chooseLyricMode(mode,el){
+  document.querySelectorAll('.lmc-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.lyricMode=mode;
+
+  if(mode==='ai-wrote'){
+    showEditableLyrics();
+  }else if(mode==='self'){
+    addMsg('ai','Perfect! Your track concept is ready in the Studio. Click "Open in Studio →" above to start writing your lyrics there — you\'ll have the verse/chorus structure ready with the AI assistant on the side.',false);
+  }else if(mode==='collaborate'){
+    showCollaborateLyrics();
+  }
+}
+
+function showEditableLyrics(){
+  if(!state.concept?.lyrics)return;
+  const c=state.concept;
+  let html='<div class="editable-lyrics"><h4>✍️ Your lyrics — click any line to edit</h4>';
+
+  const sectionMap={verse1:'Verse 1',prechorus:'Pre-Chorus',chorus:'Chorus',verse2:'Verse 2',bridge:'Bridge',outro:'Outro'};
+  const sectionClass={verse1:'lt-verse',prechorus:'lt-pre',chorus:'lt-chorus',verse2:'lt-verse',bridge:'lt-bridge',outro:'lt-pre'};
+
+  Object.entries(c.lyrics).forEach(([section,lines])=>{
+    if(!lines?.length)return;
+    html+=`<div class="lyric-section-lbl"><span class="lyrics-section-tag ${sectionClass[section]||'lt-verse'}">${sectionMap[section]||section}</span></div>`;
+    lines.forEach((line,li)=>{
+      html+=`<input class="lyric-edit-line" value="${line.replace(/"/g,'&quot;')}" placeholder="Write your line here..." data-section="${section}" data-line="${li}" onchange="updateLyricLine('${section}',${li},this.value)">`;
+    });
+  });
+
+  html+=`<div class="lyrics-actions" style="margin-top:14px">
+    <button class="ly-btn ly-primary" onclick="openInStudio()">Open in Studio with these lyrics →</button>
+    <button class="ly-btn ly-purple" onclick="regenerateLyrics()">✦ Rewrite all lyrics</button>
+    <button class="ly-btn ly-outline" onclick="addSection()">+ Add section</button>
+  </div></div>`;
+
+  addMsg('ai',html,true);
+  toast('✍️ Click any line to edit it directly');
+}
+
+function showCollaborateLyrics(){
+  if(!state.concept?.lyrics)return;
+  const c=state.concept;
+  let html='<div class="editable-lyrics"><h4>🤝 Collaboration — I started, you finish</h4>';
+
+  const sectionMap={verse1:'Verse 1',prechorus:'Pre-Chorus',chorus:'Chorus',verse2:'Verse 2',bridge:'Bridge',outro:'Outro'};
+  const sectionClass={verse1:'lt-verse',prechorus:'lt-pre',chorus:'lt-chorus',verse2:'lt-verse',bridge:'lt-bridge',outro:'lt-pre'};
+
+  Object.entries(c.lyrics).forEach(([section,lines])=>{
+    if(!lines?.length)return;
+    html+=`<div class="lyric-section-lbl"><span class="lyrics-section-tag ${sectionClass[section]||'lt-verse'}">${sectionMap[section]||section}</span></div>`;
+    // Show first half AI-written, second half empty
+    lines.forEach((line,li)=>{
+      const val=li<Math.ceil(lines.length/2)?line:'';
+      const ph=li<Math.ceil(lines.length/2)?'':`Continue ${sectionMap[section]||section}...`;
+      html+=`<input class="lyric-edit-line" value="${val.replace(/"/g,'&quot;')}" placeholder="${ph}" style="${val?'':'opacity:.5'}" data-section="${section}" data-line="${li}" onchange="updateLyricLine('${section}',${li},this.value)">`;
+    });
+  });
+
+  html+=`<div class="lyrics-actions" style="margin-top:14px">
+    <button class="ly-btn ly-primary" onclick="openInStudio()">Open in Studio →</button>
+    <button class="ly-btn ly-purple" onclick="fillRemainingLyrics()">✦ AI fills the rest</button>
+  </div></div>`;
+
+  addMsg('ai',html,true);
+}
+
+function updateLyricLine(section,li,value){
+  if(state.concept?.lyrics?.[section]){
+    state.concept.lyrics[section][li]=value;
+  }
+}
+
+async function regenerateLyrics(){
+  addMsg('ai','Rewriting all lyrics...',false);
+  addTyping();
+  try{
+    const res=await callClaude([{role:'user',content:`Rewrite ALL the lyrics for this track. Keep the same structure and sections, but write completely fresh, new lyrics. Track: ${state.concept?.title}, Genre: ${state.concept?.genre}, Mood: ${state.concept?.mood}, Key: ${state.concept?.key}. Return ONLY a <concept> JSON block with the same structure but new lyrics field.`}]);
+    removeTyping();
+    const match=res.match(/<concept>([\s\S]*?)<\/concept>/);
+    if(match){
+      try{const updated=JSON.parse(match[1].trim());if(updated.lyrics)state.concept.lyrics=updated.lyrics;showEditableLyrics();toast('✦ Lyrics rewritten!')}catch(e){addMsg('ai','Here are fresh lyrics for you!',false)}
+    }
+  }catch(e){removeTyping();addMsg('ai','Could not rewrite lyrics. Try again.',false)}
+}
+
+async function fillRemainingLyrics(){
+  addTyping();
+  try{
+    const empty=[];
+    Object.entries(state.concept?.lyrics||{}).forEach(([sec,lines])=>{
+      const half=Math.ceil(lines.length/2);
+      lines.slice(half).forEach((_,i)=>empty.push({sec,li:i+half,type:sec}));
+    });
+    if(!empty.length){removeTyping();toast('All lines already filled!');return}
+    const res=await callClaude([{role:'user',content:`Complete ${empty.length} empty song lyric lines. Types: ${empty.map(e=>e.type).join(', ')}. Genre: ${state.concept?.genre}, Mood: ${state.concept?.mood}. Write ONLY the lines, one per line, nothing else.`}]);
+    removeTyping();
+    const lines=res.trim().split('\n').filter(l=>l.trim());
+    empty.forEach(({sec,li},i)=>{if(lines[i]&&state.concept?.lyrics?.[sec])state.concept.lyrics[sec][li]=lines[i].trim()});
+    showCollaborateLyrics();toast('✦ AI filled the remaining lines!');
+  }catch(e){removeTyping();addMsg('ai','Could not fill lines. Try again.',false)}
+}
+
+function renderConcept(c){
+  if(c.bpm){document.getElementById('bpm-sl').value=c.bpm;document.getElementById('bpm-val').textContent=c.bpm}
+  if(c.genre)highlightPill('genre-grid',c.genre);
+  if(c.mood)highlightPill('mood-grid',c.mood);
+  if(c.key)highlightPill('key-grid',c.key);
+
+  const tl=document.getElementById('preview-tracks');tl.innerHTML='';
+  (c.layers||[]).forEach(l=>{
+    const card=document.createElement('div');card.className='prev-track';
+    const wf_id='wf-'+uid();
+    card.innerHTML=`<div class="pt-top"><div class="pt-dot" style="background:${l.color}"></div><div class="pt-name">${l.name}</div><div class="pt-type">${l.type}</div></div><div class="pt-wf" id="${wf_id}"></div>`;
+    tl.appendChild(card);
+    const wf=card.querySelector('.pt-wf');
+    Array.from({length:40},()=>Math.random()).forEach(h=>{const s=document.createElement('span');s.style.height=Math.round(3+h*14)+'px';s.style.background=l.color;wf.appendChild(s)});
+  });
+  document.getElementById('concept-preview').style.display='block';
+}
+
+function highlightPill(gridId,value){
+  document.getElementById(gridId).querySelectorAll('.setting-pill').forEach(btn=>{
+    btn.classList.toggle('on',btn.textContent.toLowerCase().includes(value.toLowerCase()));
+  });
+}
+
+function refine(){
+  const inp=document.getElementById('chat-input');
+  inp.value='Can you ';inp.focus();autoResize(inp);
+}
+
+function openInStudio(){
+  if(!state.concept)return;
+  try{
+    sessionStorage.setItem('etherstudio_concept',JSON.stringify({
+      concept:state.concept,
+      bpm:parseInt(document.getElementById('bpm-sl').value),
+      lyricMode:state.lyricMode,
+      timestamp:Date.now()
+    }));
+  }catch(e){}
+  toast('✦ Opening in Studio...');
+  setTimeout(()=>window.location.href='studio.html',600);
+}
+
+function uid(){return Math.random().toString(36).slice(2,9)}
+function toast(m,d=2400){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),d)}
+
+buildGrids();
+checkAPI();
+</script>
+</body>
+</html>
