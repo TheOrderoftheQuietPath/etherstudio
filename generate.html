@@ -244,7 +244,7 @@ function hi(gid,val){
 async function checkAPI(){
   const pill=document.getElementById('api-pill');
   const txt=document.getElementById('api-txt');
-  if(!KEY||KEY==='YOUR_API_KEY_HERE'){pill.className='api-pill api-bad';txt.textContent='No API key';return}
+  if(!KEY||KEY==='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'){pill.className='api-pill api-bad';txt.textContent='No API key';return}
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
