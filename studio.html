@@ -1077,7 +1077,7 @@ async function runAI(prompt){
 }
 
 async function callClaude(messages){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='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'){throw new Error('Please add your Anthropic API key to studio.html')}
+  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='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'){throw new Error('Please add your Anthropic API key to studio.html')}
   const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages})});
   if(!res.ok)throw new Error('API error');return(await res.json()).content[0].text;
 }
